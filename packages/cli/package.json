@@ -8,6 +8,7 @@
     "cli.mjs",
     "check-worker.mjs",
     "gen.mjs",
+    "gen-board.mjs",
     "gen-check.mjs",
     "gen-pages.mjs",
     "gen-pour.mjs",

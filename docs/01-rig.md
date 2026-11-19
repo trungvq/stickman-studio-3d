@@ -2383,6 +2383,11 @@ ra đúng từng byte.
   cảnh ([14](14-di-muot.md#5-gen-walk)); chuyển động do `sceneAt`. `parsePoints` đọc điểm, `planWalk` ra mốc và clip theo luật
   thời gian (giây theo dây cung, `yaw` phân giác, cung bo `ARC_STEP`, bán kính nhỏ nhất `v / WALK_TURN_RATE`, cú quay tại
   chỗ, quay rồi đi); không cần vai trò của đồ.
+- **Vào, ra chỗ ngồi qua ô cửa** (`board`, `gen-board.mjs`): chỉ có lệnh `stickman gen board`, không có bản chung. Ghi cả
+  mốc `world.path` (đứng ngoài, hạ hông, rút chân) vào cảnh lẫn hành động chân, thân, đầu, tay khớp các mốc ấy; khung ô cửa
+  (`doorFrame`), góc chân cho cổ chân tới đích hệ thân có dang (`legAngles`), bước chân qua ngưỡng (`stepFoot`, mức nhấc
+  `liftProfile`), thời lượng hai pha `BOARD_TIME`, nhịp `SIT_PHASE`, `SWING_PHASE`, độ cúi `BOARD_LEAN`; ô cửa, mặt ngồi
+  đọc từ vai trò `doorway`, `seat` ([13](13-vai-tro-do.md#67-gen-board)), dáng ngồi đầu, cuối là `gen sit`.
 - **Trang soi** (`gen-pages.mjs`, module thuần): `GEN_PAGES[kiểu]` mô tả form tham số, sân khấu thử (đồ thử chỉ bằng mục
   vai trò, món cầm tay thử) và tham số gọi bộ sinh; tờ thử `gen sit --sheet` dựng ô bằng chính bản mô tả ấy
   ([13](13-vai-tro-do.md#9-trang-soi-bộ-sinh)).

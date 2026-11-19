@@ -203,6 +203,17 @@ export function propOf(name: string, place: Place3, roles: RoleInput[], { floor 
         touch.add('foot');
         break;
       }
+      case 'doorway': {
+        // ngưỡng là tấm dày tới nền ngoài, khung trên là thanh dọc `head`, hai trụ nối đầu ngưỡng lên đầu `head`
+        const { from, to, width } = r.sill, O: P2 = [r.out[0], r.out[2]], w = width / 2, half = PROP.post * h;
+        const q = (p: V3, o: number): P2 => [p[0] + O[0] * o, p[2] + O[1] * o];
+        const ring = [q(from, w), q(to, w), q(to, -w), q(from, -w)], base = Math.max(r.ground, from[1], to[1]);
+        parts.push({ v: [...ring.map((p, i) => v3(p, i % 3 ? to[1] : from[1])), ...ring.map((p) => v3(p, base))], tone: CHAIR });
+        for (let i = 0; i + 1 < r.head.length; i++) parts.push({ v: bar(r.head[i], r.head[i + 1], half), tone: CHAIR });
+        const ends = [r.head[0], r.head[r.head.length - 1]];
+        [from, to].forEach((p, i) => parts.push({ v: bar(p, [p[0], ends[i][1], p[2]], half), tone: CHAIR }));
+        break;
+      }
       case 'vessel': {
         // trục lathe (lên, −y) nghiêng `tilt` quanh z rồi quay `yaw` thành `dir`: (sin t · cos φ, −cos t, −sin t · sin φ)
         const { at, r: rad, dir: d } = r.mouth;

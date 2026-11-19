@@ -115,6 +115,8 @@ export function roleSpots(r) {
       return r.poly.map(([x, z]) => [x, r.y, z]);
     case "vessel":
       return [r.mouth.at];
+    case "doorway":
+      return [r.sill.from, r.sill.to, ...r.head];
     default:
       return [];
   }

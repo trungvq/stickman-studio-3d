@@ -61,6 +61,7 @@ sinh chiếu tiếp sang hệ của nó.
 |---|---|---|
 | `gen sit` | `[tiến, lên, phải]` (`frameOf` của `gen-sit.mjs`) | Hông người ngồi |
 | `gen pour` | Hệ thân `[tiến, y xuống, ra ngoài]` (như `SINGLE.lip`, `SERVE.lip`) | Mốc `chest` của người rót, chia `world.s` |
+| `gen board` | Khung ô cửa `{ u, n, y }`: dọc ngưỡng, ra ngoài theo `out`, y xuống (`doorFrame` của `gen-board.mjs`) | Giữa đường giữa ngưỡng |
 
 **Phép đặt được nhận.** Từ khung vật ra thế giới chỉ gồm tịnh tiến, quay quanh trục đứng và cỡ đồng đều dương (`Place3`
 có `yaw`, `s`; nút cha cũng vậy). `rolesOf` gặp nghiêng, cỡ không đều hay lật thì báo lỗi cho vật ấy, không đọc vai trò của
@@ -80,6 +81,7 @@ Kiểu hình học dùng chung (`core/roles.ts`):
 | `Rect` | `{ at, size: [sâu, rộng], front? }` | Hình chữ nhật nằm ngang: tâm `at` trên mặt, cạnh `sâu` dọc `front`, `rộng` ngang. `front` ngang, bỏ trống là +x của `Item` |
 | `Segment` | `{ from, to, width }` | Đoạn trên một mặt kèm bề rộng mặt ấy |
 | `Poly` | `{ y, poly: [[x, z], …] }` | Đa giác lồi nằm ngang ở độ cao `y`, đỉnh xếp vòng |
+| `Line` | `[Point, Point, …]` | Đường gấp khúc, ít nhất hai điểm |
 
 ## 3. Bảng vai trò
 
@@ -95,6 +97,7 @@ vật (hai tay vịn) và để cờ CLI gọi đích danh (`ban-an#tren`), duy 
 | `backrest` | Lưng ghế | Đồ của cảnh | `from`, `to`, `width` | `front` | — | `gen sit` (`recline`, kiểm lấn) |
 | `footrest` | Để chân | Đồ của cảnh | `at`, `size` | `front` | — | `gen sit` (mặt đỡ bàn chân) |
 | `tabletop` | Mặt bàn | Đồ của cảnh | `y`, `poly`, `thick` | — | — | `gen sit --hands table`, kiểm gối |
+| `doorway` | Ô cửa | Đồ của cảnh | `sill`, `head`, `out`, `floor` | `ground` | — | `gen board` |
 
 Vai trò của đồ của cảnh không khai được trên món cầm tay ở bản đầu (zod: "vai trò `seat` chỉ khai ở đồ của cảnh").
 
@@ -235,15 +238,36 @@ vẫn không với tới sàn thì lỗi, kể cả `--feet free`; chân so le t
 - Bộ ngồi kiểm gối, đùi dưới mặt dưới trong đa giác; `--hands table` đặt lòng tay vào trong mép gần như luật bàn của
   [05](05-repo-video.md#ngồi-theo-ghế-của-cảnh). Đặt đồ lên bàn dùng lại vai trò này khi có bộ sinh ấy.
 
+### 3.8 `doorway` — ô cửa
+
+Ô người bước qua để vào, ra một chỗ ngồi (cửa xe): ngưỡng dưới, khung trên, hướng ra ngoài, độ cao sàn hai bên.
+
+| Trường | Kiểu | Nghĩa |
+|---|---|---|
+| `sill` | `Segment` | Ngưỡng: `from → to` dọc mép trên ngưỡng (đường giữa bề dày), `width` bề dày ngưỡng theo hướng ra |
+| `head` | `Line` | Mép dưới khung trên (xe: cột A rồi mép mui), mọi điểm cao hơn ngưỡng; ngoài hai đầu thì lấy đầu gần nhất |
+| `out` | `Dir` | Hướng ra ngoài, nằm ngang, vuông góc ngưỡng |
+| `floor` | số | `y` sàn phía trong (sàn xe) |
+| `ground` | số, mặc định `0` | `y` nền phía ngoài |
+
+- zod: `from` khác `to`; ngưỡng dốc tới `DOORWAY_SLOPE` `10°`; `out` nằm ngang, lệch phương vuông góc ngưỡng tới
+  `DOORWAY_SKEW` `15°`; `head` ít nhất hai điểm, mọi điểm cao hơn ngưỡng (y nhỏ hơn); `floor`, `ground` không cao hơn mặt
+  trên ngưỡng.
+- Vật mang ô cửa là nút đứng yên trong lúc người qua (xe: nhóm ghế, không phải cánh cửa); phép đặt có nghiêng là lỗi như mọi
+  vai trò, nên thân xe nghiêng theo nhún thì khai ô cửa ở nút không nghiêng.
+- Hình thử (`propOf`): tấm ngưỡng xuống tới nền, thanh khung trên theo `head`, hai trụ ở hai đầu ngưỡng.
+- `gen board` đọc chỗ đứng ngoài, hốc chân, mức nhấc chân, độ cúi thân và chỗ tay nắm khung trên từ đây
+  ([6.7](#67-gen-board)); chân, thân lấn thân xe, cánh cửa đo bằng `clash` trên khối thật.
+
 ### Luật zod chung
 
-`RoleSchema` là `z.discriminatedUnion("role", …)` của bảy vai trò; `RolesSchema` là mảng của nó. Dòng báo nêu chỗ khai,
+`RoleSchema` là `z.discriminatedUnion("role", …)` của tám vai trò; `RolesSchema` là mảng của nó. Dòng báo nêu chỗ khai,
 đường dẫn (`roles[2].width`), vai trò và nghĩa của trường thiếu — nghĩa lấy từ `describe` của trường trong `ROLES`, chung cho
 zod, form của trang soi và MCP. Đồ của cảnh không biết file code của từng vật: dòng báo mang entry `stickman.world` và tên vật.
 
 ```
 held/coc.json: roles[0]: vai trò `vessel` cần `mouth.r` (bán kính trong của miệng)
-held/coc.json: roles[0]: vai trò lạ `cup`; có: pourer, vessel, seat, armrest, backrest, footrest, tabletop
+held/coc.json: roles[0]: vai trò lạ `cup`; có: pourer, vessel, seat, armrest, backrest, footrest, tabletop, doorway
 src/khoi3d/index.ts → vật `ghe-banh`: roles[3]: `armrest` có `from` trùng `to`
 ```
 
@@ -346,6 +370,13 @@ pour: {
     { slot: "cup",    role: "vessel", need: "always", find: "flag",      flag: "cup", point: true },
   ],
 },
+board: {
+  run: genBoard,
+  roles: [
+    { slot: "door", role: "doorway", need: "always", find: "doorBeside", flag: "door" },
+    { slot: "seat", role: "seat",    need: "always", find: "boardSeat",  flag: "seat" },
+  ],
+},
 ```
 
 | Trường slot | Nghĩa |
@@ -381,6 +412,10 @@ quãng rót. Thứ tự cho mỗi slot:
    - `heldRight`: món trong tay phải (`world.hands[].right.hold`) của người rót ở giây
      ấy, không thì món `--item` (mặc định `binh`).
    - `flag`: chỉ theo cờ (đích rót là ý định của cảnh, không đoán).
+   - `doorBeside`: ô cửa mà mặt ngồi (ra) hay người (vào) nằm trong bề dài ngưỡng, đúng phía (ghế phía trong, người phía
+     ngoài theo `out`), gần ngưỡng nhất.
+   - `boardSeat`: ra thì như `underHip`; vào thì mặt ngồi phía trong ô cửa đã chọn, trong bề dài ngưỡng, mép phía cửa gần
+     ngưỡng nhất.
 3. Không thấy: slot `always` hay đúng điều kiện là lỗi; `auto` đi nhánh không có kèm một dòng in (mặt ngồi: mặt ngang qua
    điểm ngồi, không kiểm mép; lưng không tựa; bàn chân trên `world.floor`).
 4. **Tay vịn**: slot `per: "side"` thiếu một bên là lỗi ("`ghe-don` chỉ có tay vịn bên phải"); rig không dựng bên đối xứng
@@ -404,6 +439,10 @@ tính riêng cho số. Mọi số dưới đây ở hệ người ngồi, nhân 
 | `--armrest <x,y,z>` | Hai `armrest` đối xứng qua mặt dọc qua hông: `to` ở điểm ấy (và điểm đối xứng), `from` lùi `110` theo hướng tiến, `width` `12 · s` |
 | `--backrest <khoảng>` | `backrest` đứng, mặt trước sau hông ngần ấy, `from` cao hơn mặt ngồi `24`, `to` cao `110` (`CHAIR_BACKREST`, như ghế xem thử), `width` `200` (không giới hạn ngang trong tầm thân) |
 | `--footrest <y>` | `footrest` bệ ở độ cao `y` thế giới, tâm dưới hông, `size` `[400, 400]` (phủ mọi chỗ bàn chân với tới: mặt đỡ không giới hạn như sàn) |
+
+`--door x,z,y ngưỡng,y khung` của `gen board` dựng một `doorway` dọc mặt ngồi (`--seat`, hay khi ra là mặt ngồi dưới hông): `(x, z)` là một điểm
+trên đường giữa ngưỡng ở độ cao `y ngưỡng`, ngưỡng chạy theo `front` của mặt ngồi, dài hơn mặt ngồi mỗi đầu `120`, `width`
+`20 · s`, `out` từ ghế ra phía điểm ấy, `head` thẳng ở `y khung`, `floor` là sàn của người, `ground` là `--ground` hay sàn ấy.
 
 `--cup x,y,z` của `gen pour` là **điểm đích**, không dựng đồ ảo (slot `point`, [6.4](#64-gen-pour)).
 
@@ -447,6 +486,17 @@ tính riêng cho số. Mọi số dưới đây ở hệ người ngồi, nhân 
 - Ngồi sâu, nông, lệch trái, phải là chỗ của điểm ngồi trên mặt ngồi; bộ ngồi đọc ra và kiểm, không dời người.
   Trang soi đặt `world.at` từ tham số "chỗ ngồi trên ghế".
 
+### 6.7 `gen board`
+
+- Hai slot bắt buộc: ô cửa (`doorway`) và mặt ngồi (`seat`); `none` là lỗi. Ghế phải nhìn dọc ô cửa (`front` lệch `90° ± 30°`
+  so với `out`).
+- Từ ô cửa: chỗ đứng ngoài (ngoài mép ngoài ngưỡng và mặt khung trên), nền ngoài `ground` cho bàn chân đứng, `floor` thành
+  `world.floor` của cảnh, mặt trên ngưỡng cho luật đế giày qua ngưỡng và độ hở ống chân lúc ngồi đáp, `head` cho độ cúi thân,
+  luật đỉnh đầu và chỗ tay phía xe nắm. Từ mặt ngồi: mép phía cửa (chỗ hông đáp lúc hạ), độ cao, hướng ngồi cuối; dáng ngồi
+  đầu, cuối là `gen sit` trên cùng mặt ngồi.
+- Không có luật lấn riêng: chân, thân với thân xe, cánh cửa, cột là `clash` của `check` trong tự kiểm
+  ([05](05-repo-video.md#vào-ra-chỗ-ngồi-qua-ô-cửa)).
+
 ## 7. `check`, MCP, hai lớp
 
 **Hai lớp.** Vai trò của món cầm tay nằm trong `held/<món>.json` nên đi hai lớp như món ([05](05-repo-video.md#hai-lớp)):
@@ -463,7 +513,7 @@ người:
 | Vai trò lệch hình: `seat`, `armrest`, `footrest`, mặt trên `tabletop` không nằm trên mặt trên của khối cùng chủ (dò dọc xuống, khe quá `2`); mặt trước `backrest` cách mặt khối cùng chủ quá `2` | cảnh báo |
 | Người ngồi có điểm ngồi chiếu vào trong một mặt ngồi (nới `2 · s`) mà độ cao lệch quá `1 · s` | cảnh báo |
 
-Người ngồi trên đồ không khai `seat` (đệm seiza, bệ cửa sổ, mép giường) không ra dòng nào. `roles` của món cầm tay hỏng là lỗi
+`doorway` không có luật lệch hình: ngưỡng, khung trên là mép của khối chứ không phải mặt dò dọc xuống được. Người ngồi trên đồ không khai `seat` (đệm seiza, bệ cửa sổ, mép giường) không ra dòng nào. `roles` của món cầm tay hỏng là lỗi
 zod của `held/`, như mọi JSON. Tự kiểm của `gen sit` chạy cả nhóm `roles` trong `worldChecks`.
 
 **MCP** ([04](04-mcp.md#tool)):

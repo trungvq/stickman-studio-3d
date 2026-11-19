@@ -68,7 +68,7 @@ const USAGE = `stickman <lệnh> [thư mục]
   gen <kiểu>    sinh một hành động cho đúng một cảnh từ chỗ người và đồ trong cảnh, tự kiểm trên
                 chính cảnh ấy (cổ tay, tầm với, khuỷu một chiều, điểm tiếp xúc, check move/clash/held/
                 roles) rồi mới ghi actions/; không đạt thì báo lỗi, không ghi. Kiểu: pour (rót), sit (ngồi),
-                walk (đi: ghi path và clip vào scenes/).
+                walk (đi: ghi path và clip vào scenes/), board (vào, ra chỗ ngồi qua ô cửa: ghi path, clip).
                 Đồ của cảnh tìm theo vai trò (Item.roles, withRoles); bảng vai trò cần: gen <kiểu> --help
                 chung: --scene <id> --cast <người> --at <giây bắt đầu> --name <tên file> --force (ghi dù
                 không đạt, đè file không phải gen sinh) --dry-run (chỉ in)
@@ -102,6 +102,13 @@ const USAGE = `stickman <lệnh> [thư mục]
                 --turn-time <giây mỗi 90°, mặc định 0.8> --turn-side auto|right|left (quay 180°, auto: về
                 phía ống kính) --hold <giây đứng ở điểm cuối, mặc định 0.6> --track <tên> --after <hành
                 động đứng, mặc định stand-3d> --blend <0…1, mặc định 0.3>
+                board: vào, ra chỗ ngồi qua ô cửa (vai trò doorway): chân phía xe bước qua ngưỡng cùng lúc hông
+                hạ vào mặt ngồi, ngồi rồi rút chân phía cửa vào (ra: ngược lại, chân phía cửa ra trước); ghi
+                mốc world.path, world.floor và clip vào scenes/<id>.json (bản cũ ở
+                .bak), hành động board-<way>-<cảnh>-<người>-3d vào actions/ (vào: kèm sit-<cảnh>-<người>-3d)
+                --way in|out (bắt buộc) --at <giây | @mốc±s> (vào: người đứng sẵn ở chỗ, hướng lệnh báo; ra:
+                người đang ngồi) --door <vật | vật#mục | x,z,y ngưỡng,y khung trên> --seat <vật | vật#mục>
+                --ground <y nền ngoài> --track <tên> --legs/--back/--hands/--feet… (cờ gen sit của dáng ngồi)
   migrate-held  chuyển món bản 1 (kiểu cầm khai theo món) sang v2 và \`hold\` \`món#kiểu\` của cảnh sang chỗ cầm nhóm
                 \`{ item, group, … }\` (tay dẫn), chỗ cầm gần liên kết cũ nhất; in bảng lệch từng lần cầm.
                 --scene <regex> chỉ cảnh có id khớp
@@ -368,6 +375,10 @@ else if (parsed.error) {
         track: value("track"),
         after: value("after"),
         blend: value("blend"),
+        way: value("way"),
+        door: value("door"),
+        seat: value("seat"),
+        ground: value("ground"),
         force: flag("force"),
         dryRun: flag("dry-run"),
       });

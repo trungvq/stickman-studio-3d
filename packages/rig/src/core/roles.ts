@@ -2,7 +2,7 @@ import { z } from "zod";
 import { cross3, place3, scale3, sub3, type M3, type Place3, type V3 } from "./lens";
 
 /**
- * Vai trò của đồ: món làm được gì trong một động tác (vật rót, vật đựng, mặt ngồi, tay vịn, lưng ghế, để chân, mặt bàn)
+ * Vai trò của đồ: món làm được gì trong một động tác (vật rót, vật đựng, mặt ngồi, tay vịn, lưng ghế, để chân, mặt bàn, ô cửa)
  * kèm số đo bắt buộc, viết trong khung của vật mang nó. Bảng `ROLES` là nguồn của trường, nghĩa (`describe`), vật mang và
  * luật zod. docs/13-vai-tro-do.md
  */
@@ -12,7 +12,8 @@ export const ROLE_CARRIERS = ["held", "scene"] as const;
 export type RoleCarrier = (typeof ROLE_CARRIERS)[number];
 
 /** Kiểu hình học của một trường (docs/13 mục 2) */
-export type RoleFieldKind = "Point" | "Dir" | "Rect" | "Segment" | "Poly" | "number" | "object";
+export type RoleFieldKind =
+  "Point" | "Dir" | "Rect" | "Segment" | "Poly" | "Line" | "number" | "object";
 
 export interface RoleField {
   kind: RoleFieldKind;
@@ -37,7 +38,7 @@ const f = (kind: RoleFieldKind, required: boolean, describe: string): RoleField 
   describe,
 });
 
-/** Bảy vai trò của bản đầu (docs/13 mục 3) */
+/** Các vai trò (docs/13 mục 3) */
 export const ROLES = {
   pourer: {
     describe: "vật rót",
@@ -107,6 +108,24 @@ export const ROLES = {
       y: f("Poly", true, "độ cao mặt trên bàn"),
       poly: f("Poly", true, "đỉnh `[x, z]` của mặt trên: đa giác lồi, xếp vòng"),
       thick: f("number", true, "bề dày tấm mặt bàn"),
+    },
+  },
+  doorway: {
+    describe: "ô cửa",
+    carriers: ["scene"],
+    fields: {
+      sill: f("object", true, "ngưỡng: `from`, `to`, `width`"),
+      "sill.from": f("Segment", true, "một đầu đường giữa mặt trên ngưỡng"),
+      "sill.to": f("Segment", true, "đầu kia đường giữa mặt trên ngưỡng"),
+      "sill.width": f("Segment", true, "bề dày ngưỡng theo `out`"),
+      head: f(
+        "Line",
+        true,
+        "mép dưới khung trên: đường gấp khúc từ phía `sill.from` sang phía `sill.to`, mọi điểm cao hơn ngưỡng",
+      ),
+      out: f("Dir", true, "hướng ra ngoài, nằm ngang, vuông góc ngưỡng"),
+      floor: f("number", true, "độ cao sàn phía trong"),
+      ground: f("number", false, "độ cao nền phía ngoài; bỏ trống là `0` của vật"),
     },
   },
 } as const satisfies Record<string, RoleDef>;
@@ -350,6 +369,80 @@ const TabletopSchema = z
     for (const m of polyProblems(r.poly)) issue(ctx, ["poly"], `\`tabletop\`: ${m}`);
   });
 
+/** Ngưỡng ô cửa dốc tối đa, độ; `out` lệch phương vuông góc ngưỡng tối đa, độ */
+export const DOORWAY_SLOPE = 10;
+export const DOORWAY_SKEW = 15;
+
+const DoorwaySchema = z
+  .strictObject(
+    {
+      role: z.literal("doorway"),
+      name,
+      sill: z
+        .strictObject(
+          {
+            from: point("doorway", "sill.from"),
+            to: point("doorway", "sill.to"),
+            width: len("doorway", "sill.width"),
+          },
+          fieldError("doorway", "sill", "object `{ from, to, width }`"),
+        )
+        .describe(meaning("doorway", "sill")),
+      head: z
+        .array(point("doorway", "head"), fieldError("doorway", "head", "mảng điểm `[x, y, z]`"))
+        .describe(meaning("doorway", "head")),
+      out: point("doorway", "out"),
+      floor: z.number(fieldError("doorway", "floor", "số")).describe(meaning("doorway", "floor")),
+      ground: z
+        .number(fieldError("doorway", "ground", "số"))
+        .optional()
+        .describe(meaning("doorway", "ground")),
+    },
+    entry("doorway"),
+  )
+  .describe(ROLES.doorway.describe)
+  .superRefine((r, ctx) => {
+    const [a, b] = [r.sill.from as V3, r.sill.to as V3];
+    const d = sub3(b, a);
+    if (norm(d) < 1e-6) {
+      issue(ctx, ["sill"], "`doorway` có `sill.from` trùng `sill.to`");
+      return;
+    }
+    const slope = Math.atan2(Math.abs(d[1]), Math.hypot(d[0], d[2])) / D2R;
+    if (slope > DOORWAY_SLOPE)
+      issue(ctx, ["sill"], `\`doorway\`: ngưỡng dốc ${fmt(slope)}° (quá ${DOORWAY_SLOPE}°)`);
+    const out = r.out as V3;
+    horizontal(ctx, "doorway", out, "out");
+    if (norm(out) > 1e-9 && Math.abs(out[1]) <= 1e-6 * norm(out)) {
+      const skew = Math.abs(
+        Math.asin(
+          Math.min(
+            1,
+            Math.abs(d[0] * out[0] + d[2] * out[2]) / (Math.hypot(d[0], d[2]) * norm(out)),
+          ),
+        ) / D2R,
+      );
+      if (skew > DOORWAY_SKEW)
+        issue(
+          ctx,
+          ["out"],
+          `\`doorway\`: \`out\` lệch phương vuông góc ngưỡng ${fmt(skew)}° (quá ${DOORWAY_SKEW}°)`,
+        );
+    }
+    if (r.head.length < 2)
+      issue(ctx, ["head"], `\`doorway\`: \`head\` cần ít nhất hai điểm, có ${r.head.length}`);
+    const top = Math.min(a[1], b[1]);
+    r.head.forEach((p, i) => {
+      if (p[1] >= top)
+        issue(ctx, ["head", i], "`doorway`: điểm `head` phải cao hơn ngưỡng (y nhỏ hơn)");
+    });
+    const low = Math.max(a[1], b[1]);
+    for (const k of ["floor", "ground"] as const) {
+      const y = r[k] ?? 0;
+      if (y < low - 1e-6) issue(ctx, [k], `\`doorway\`: \`${k}\` cao hơn mặt trên ngưỡng`);
+    }
+  });
+
 /** Lời báo khi `role` không phải vai trò nào */
 function unknownRole(input: unknown): string {
   const all = ROLE_IDS.join(", ");
@@ -372,6 +465,7 @@ export const RoleSchema = z.discriminatedUnion(
     BackrestSchema,
     FootrestSchema,
     TabletopSchema,
+    DoorwaySchema,
   ],
   {
     error: (iss) =>
@@ -558,7 +652,16 @@ export type PlacedRole =
   | { role: "seat" | "footrest"; name?: string; at: V3; size: [number, number]; front: V3 }
   | { role: "armrest"; name?: string; from: V3; to: V3; width: number }
   | { role: "backrest"; name?: string; from: V3; to: V3; width: number; front: V3 }
-  | { role: "tabletop"; name?: string; y: number; poly: [number, number][]; thick: number };
+  | { role: "tabletop"; name?: string; y: number; poly: [number, number][]; thick: number }
+  | {
+      role: "doorway";
+      name?: string;
+      sill: { from: V3; to: V3; width: number };
+      head: V3[];
+      out: V3;
+      floor: number;
+      ground: number;
+    };
 
 const flat = (d: V3): V3 => unit([d[0], 0, d[2]]);
 
@@ -620,6 +723,18 @@ export function resolveRoles(roles: readonly Role[]): PlacedRole[] {
             thick: r.thick,
           },
         ];
+      case "doorway":
+        return [
+          {
+            role: "doorway",
+            ...nm,
+            sill: { from: [...r.sill.from] as V3, to: [...r.sill.to] as V3, width: r.sill.width },
+            head: r.head.map((p) => [...p] as V3),
+            out: flat(r.out as V3),
+            floor: r.floor,
+            ground: r.ground ?? 0,
+          },
+        ];
       default:
         return [];
     }
@@ -654,6 +769,15 @@ export function placeRoles(roles: readonly PlacedRole[], p: Place3): PlacedRole[
           thick: r.thick * s,
         };
       }
+      case "doorway":
+        return {
+          ...r,
+          sill: { from: P(r.sill.from), to: P(r.sill.to), width: r.sill.width * s },
+          head: r.head.map(P),
+          out: T(r.out),
+          floor: P([0, r.floor, 0])[1],
+          ground: P([0, r.ground, 0])[1],
+        };
     }
   });
 }

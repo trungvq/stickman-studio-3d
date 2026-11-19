@@ -70,7 +70,7 @@ const close = (a: readonly number[], b: readonly number[], d = 6) =>
 const seat = { role: "seat", at: [0, 0, 0], size: [100, 90] };
 
 describe("`ROLES`", () => {
-  it("bảy vai trò, mỗi trường có `describe`; vật mang", () => {
+  it("tám vai trò, mỗi trường có `describe`; vật mang", () => {
     expect(ROLE_IDS).toEqual([
       "pourer",
       "vessel",
@@ -79,6 +79,7 @@ describe("`ROLES`", () => {
       "backrest",
       "footrest",
       "tabletop",
+      "doorway",
     ]);
     for (const id of ROLE_IDS)
       for (const f of Object.values(ROLES[id].fields)) expect(f.describe.length).toBeGreaterThan(3);
@@ -108,7 +109,7 @@ describe("luật zod chung", () => {
   });
   it("vai trò lạ, thiếu `role`", () => {
     expect(sceneErr([{ role: "cup" }])).toBe(
-      "roles[0]: vai trò lạ `cup`; có: pourer, vessel, seat, armrest, backrest, footrest, tabletop",
+      "roles[0]: vai trò lạ `cup`; có: pourer, vessel, seat, armrest, backrest, footrest, tabletop, doorway",
     );
     expect(sceneErr([{ at: [0, 0, 0] }])).toMatch(/^roles\[0\]: mục vai trò cần `role`/);
   });
@@ -133,6 +134,68 @@ describe("luật zod chung", () => {
     expect(
       parseRoles([{ role: "armrest", from: [0, -62, 0], to: [100, -70, 0], width: 10 }]).success,
     ).toBe(true);
+  });
+  it("`doorway`: ngưỡng gần ngang, `out` ngang vuông góc ngưỡng, `head` trên ngưỡng, sàn và nền không cao hơn ngưỡng", () => {
+    const door = (o: Record<string, unknown> = {}) => [
+      {
+        role: "doorway",
+        sill: { from: [0, -55, -150], to: [0, -55, 110], width: 18 },
+        head: [
+          [0, -220, -160],
+          [0, -370, 10],
+          [0, -370, 110],
+        ],
+        out: [-1, 0, 0],
+        floor: -50,
+        ...o,
+      },
+    ];
+    expect(parseRoles(door()).success).toBe(true);
+    expect(sceneErr(door({ sill: { from: [0, -55, 0], to: [0, -55, 0], width: 18 } }))).toBe(
+      "roles[0].sill: `doorway` có `sill.from` trùng `sill.to`",
+    );
+    expect(sceneErr(door({ sill: { from: [0, -55, 0], to: [0, -105, 100], width: 18 } }))).toMatch(
+      /ngưỡng dốc 26,6° \(quá 10°\)/,
+    );
+    expect(sceneErr(door({ out: [-1, 0, 1] }))).toMatch(/`out` lệch phương vuông góc ngưỡng 45°/);
+    expect(sceneErr(door({ out: [-1, 0.2, 0] }))).toMatch(/`out` phải nằm ngang/);
+    expect(sceneErr(door({ head: [[0, -300, 0]] }))).toMatch(/`head` cần ít nhất hai điểm, có 1/);
+    expect(
+      sceneErr(
+        door({
+          head: [
+            [0, -300, 0],
+            [0, -40, 50],
+          ],
+        }),
+      ),
+    ).toMatch(/roles\[0\]\.head\[1\]: `doorway`: điểm `head` phải cao hơn ngưỡng/);
+    expect(sceneErr(door({ floor: -60 }))).toMatch(/`floor` cao hơn mặt trên ngưỡng/);
+    expect(sceneErr(door({ sill: { from: [0, -55, 0], to: [0, -55, 100] } }))).toMatch(
+      /cần `sill.width` \(bề dày ngưỡng theo `out`\)/,
+    );
+  });
+  it("`doorway` đã giải: `ground` mặc định 0, đặt qua phép đặt (điểm, hướng quay, độ cao, bề dày nhân cỡ)", () => {
+    const parsed = parseRoles([
+      {
+        role: "doorway",
+        sill: { from: [0, -10, -50], to: [0, -10, 50], width: 4 },
+        head: [
+          [0, -120, -50],
+          [0, -120, 50],
+        ],
+        out: [2, 0, 0],
+        floor: -8,
+      },
+    ]);
+    expect(parsed.success).toBe(true);
+    const [r] = resolveRoles(parsed.data!);
+    expect(r.role === "doorway" && [r.ground, ...r.out]).toEqual([0, 1, 0, 0]);
+    const [w] = placeRoles([r], { at: [100, 0, 0], yaw: Math.PI / 2, s: 2 });
+    if (w.role !== "doorway") throw new Error("doorway");
+    close(w.out, [0, 0, -1]);
+    close(w.sill.from, [0, -20, 0]);
+    expect([w.sill.width, w.floor, w.ground]).toEqual([8, -16, 0]);
   });
   it("`tabletop`: ít nhất ba đỉnh, lồi, không trùng đỉnh", () => {
     const top = (poly: number[][]) => [{ role: "tabletop", y: -140, poly, thick: 6 }];

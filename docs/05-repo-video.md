@@ -534,11 +534,12 @@ Hành động mà số đúng phụ thuộc chỗ người và đồ trong cản
 chung — không sửa tay 24 mốc: `stickman gen <kiểu>` tính từ cảnh, chạy thử trong chính cảnh ấy, đo, rồi mới ghi
 `actions/` (lớp trên, [Hai lớp](#hai-lớp)). MCP: tool `gen` cùng tham số ([04](04-mcp.md#tool)). Kiểu hiện có: `pour` (rót),
 `sit` ([Ngồi theo ghế của cảnh](#ngồi-theo-ghế-của-cảnh)), `walk` ([Đi theo các điểm sàn](#đi-theo-các-điểm-sàn) — ghi
-vào cảnh, không ghi `actions/`) — [01](01-rig.md#bộ-sinh-chung).
+vào cảnh, không ghi `actions/`), `board` ([Vào, ra chỗ ngồi qua ô cửa](#vào-ra-chỗ-ngồi-qua-ô-cửa) — ghi cả cảnh lẫn
+`actions/`) — [01](01-rig.md#bộ-sinh-chung).
 
 **Đồ tìm theo vai trò** ([13](13-vai-tro-do.md)). Mỗi kiểu khai các slot — chỗ trong phép tính cần một vật mang vai trò
 (bình `pourer`, vật đựng `vessel`, mặt ngồi `seat`, lưng ghế `backrest`, tay vịn `armrest`, để chân `footrest`, mặt bàn
-`tabletop`), bắt buộc khi nào, tìm thế nào khi không có cờ, cờ nào chỉ đích danh; `stickman gen <kiểu> --help` in bảng slot.
+`tabletop`, ô cửa `doorway`), bắt buộc khi nào, tìm thế nào khi không có cờ, cờ nào chỉ đích danh; `stickman gen <kiểu> --help` in bảng slot.
 Cờ của slot nhận tên vật (`ghe-banh`), tên vật kèm tên mục (`ban-an#tren`), số (đồ ảo: một mục vai trò dựng trong bộ nhớ qua
 đúng `RoleSchema`, đi chung đường với vật thật) hay `none` (bỏ slot dùng-nếu-có; không tắt va chạm của vật). Tên vật không
 mang vai trò của slot là lỗi kèm danh sách vật mang vai trò ấy:
@@ -783,6 +784,102 @@ pnpm exec stickman gen walk --scene t04-s14 --cast haru --at 6.2 --to "-200,300!
 - **Đầu ra** in sự kiện (góc mềm, cung, dừng, quay tại chỗ) kèm giây, số mốc và clip, bảng tự kiểm, hai lệnh
   `stickman-render` cho mỗi sự kiện — dải khung dày `0,05 s` và ô nhìn từ trên có vệt hông, bàn chân
   ([14](14-di-muot.md#4-dải-khung-dày-quanh-chỗ-rẽ)) —, và lệnh chạy lại với `--at` đã giải.
+
+### Vào, ra chỗ ngồi qua ô cửa
+
+`stickman gen board` cho một người vào hay ra một chỗ ngồi qua một ô cửa — cửa xe là chỗ dùng chính. Vào: đứng ngoài
+cạnh cửa mở nhìn dọc thân xe, chân phía xe bước qua ngưỡng vào hốc chân cùng lúc thân cúi, đầu luồn dưới khung trên, hông
+hạ xuống mặt ngồi; ngồi rồi mới rút chân phía cửa vào, quay về hướng ghế, trượt vào chỗ ngồi. Ra là ngược lại: chân phía
+cửa ra trước, nhổm dậy, chân phía xe ra sau cùng. Bộ sinh ghi **cả hai nửa**: mốc `world.path` và `world.floor` vào cảnh
+như `gen walk` (hông, hướng thân do `path` lái), và hành động `actions/board-<way>-<cảnh>-<người>-3d.json` cho chân, thân,
+đầu, tay theo đúng các mốc ấy. Vào thì ghi kèm dáng ngồi `gen sit` của chỗ ngồi cuối (`sit-<cảnh>-<người>-3d`) và nối
+clip ấy; ra thì nối `stand-3d`.
+
+```bash
+pnpm exec stickman gen board --scene t07-s12 --cast makabe --way out --at 1          # ra từ ghế đang ngồi, ô cửa cạnh ghế
+pnpm exec stickman gen board --scene t07-s03 --cast kuga --way in --at 2 --legs bent  # vào, dáng ngồi cuối chân co
+pnpm exec stickman gen board --scene thu --cast a --way in --at 0 --seat ghe --door "-650,-3850,-80,-370"   # ô cửa ảo
+```
+
+| Cờ | Làm gì |
+|---|---|
+| `--scene`, `--cast`, `--at <giây \| @mốc±s>` | Cảnh, người 3D mặc đồ, giây bắt đầu (bắt buộc). Hai pha `BOARD_TIME` (`gen-board.mjs`): hạ `1,6 s`, rút `1,2 s`; cảnh phải dài tới `--at + 2,8 + 0,2` |
+| `--way in \| out` | `in`: người đang đứng ở giây ấy, đúng chỗ đứng và hướng bộ sinh tính — sai là lỗi kèm `gen walk --to "x,z!yaw"` đưa người tới; `out`: người đang ngồi (`world.sit` hay mốc `sit`) |
+| `--door <vật \| vật#mục \| x,z,y ngưỡng,y khung>` | Ô cửa (slot `door`, vai trò `doorway`, [13](13-vai-tro-do.md#38-doorway--ô-cửa)). Không cờ: ô cửa mà mặt ngồi (ra) hay người (vào) nằm trong bề dài ngưỡng, đúng phía (ghế phía trong, người phía ngoài), gần ngưỡng nhất. Số là đồ ảo: một điểm trên đường giữa ngưỡng, ngưỡng chạy dọc mặt ngồi (của `--seat`, hay khi ra là mặt ngồi dưới hông; vào thì phải có `--seat`) dài hơn mỗi đầu `120 · h · s`, dày `20 · s`, khung trên phẳng ở `y khung`, sàn trong là sàn của người |
+| `--seat <vật \| vật#mục>` | Mặt ngồi (slot `seat`). Không cờ: ra thì mặt ngồi dưới hông (như `gen sit`), vào thì mặt ngồi phía trong ô cửa, trong bề dài ngưỡng, mép phía cửa gần ngưỡng nhất. Ghế phải nhìn dọc ô cửa (`90° ± 30°` với hướng ra) |
+| `--ground <y>` | Đè `ground` (nền ngoài) của ô cửa |
+| `--legs`, `--back`, `--hands`, `--feet`, `--tuck`, `--top`, `--elbow`, `--table`, `--armrest`, `--backrest`, `--footrest` | Chuyển cho `gen sit` của dáng ngồi đầu (ra) hay cuối (vào) — [Ngồi theo ghế của cảnh](#ngồi-theo-ghế-của-cảnh) |
+| `--track`, `--name`, `--hash`, `--force`, `--dry-run` | Như `gen walk`; tên mặc định `board-<way>-<cảnh>-<người>-3d` |
+
+Mọi số dưới đây viết theo chiều vào (`τ` từ lúc đứng); ra chạy cùng các mốc theo chiều ngược. *Chân phía xe* là chân gần
+ghế hơn (ở trong khi đứng nhìn dọc thân xe), *chân phía cửa* là chân kia.
+
+**Hình học** trong khung ô cửa (dọc ngưỡng, ra ngoài theo `out`, y xuống), mọi khoảng nhân `h · s` hay `s` của người:
+
+- *Chỗ ngồi* là điểm ngồi của người lúc `--at` (ra) hay `at` của mặt ngồi (vào). *Chỗ đáp* cùng vị trí dọc ngưỡng, cao
+  bằng mặt ngồi, từ chỗ ngồi ra phía cửa phần `LAND` `0,45` của khoảng tới mép mặt ngồi, cách mép ít nhất `EDGE_IN` `8`; dời
+  thêm ra mép khi hông → cổ chân phía cửa (còn trên nền ngoài) quá `LAND_REACH` `0,95` chiều dài chân, hay khi ống chân phía
+  cửa lúc ngồi đáp hở trên mép ngưỡng dưới `SHIN_SILL.gap` `18` (từng `3`). Sát mép vẫn không đủ hở thì in cảnh báo, ngưỡng
+  cao so với chân người.
+- *Chỗ đứng*: hông ở trước chỗ đáp `STAND_AHEAD` `6` theo hướng ghế, đế giày ngoài mép ngoài ngưỡng `HEEL_GAP` `6`, đầu
+  (bán kính `headBoxOf`) ngoài mặt khung trên `HEAD_CLEAR`, trên nền ngoài; thân nhìn dọc thân xe về phía ghế nhìn, quay ra
+  phía cửa `BOARD_YAW.stand` `20°`.
+- *`path`*: mốc đứng rồi mốc `sit` mỗi `BOARD_STEP` `0,1 s` (điểm dưới hông `legHalf · s`). Pha hạ: hông hạ từ cao lúc đứng
+  tới chỗ đáp trong `SIT_PHASE.down`, dạt ngang vào trong `SIT_PHASE.side`, thân quay ra phía cửa từ `20°` tới
+  `BOARD_YAW.land` `45°` trong `SIT_PHASE.yaw`. Pha rút: hông trượt từ chỗ đáp tới chỗ ngồi trong `SWING_PHASE.slide`, thân
+  quay về hướng ghế trong `SWING_PHASE.yaw`. Hông lái bằng `path`, nên hành động chỉ ghi góc: đổi vị trí tay chân mà không
+  đổi hông thì sinh lại, không sửa `path` tay. Mốc hành động dày gấp đôi mốc `path`.
+- *Pha hạ* (`1,6 s`, phần `0…0,13` đứng yên): chân phía cửa đứng yên trên nền ngoài; chân phía xe bước qua ngưỡng
+  (`SIT_PHASE.step` `0,13…0,6`) xuống hốc chân — dọc ngưỡng phần `FOOTWELL.along` `0,7` từ chỗ đứng tới chỗ của dáng ngồi,
+  vào trong mép trong ngưỡng `FOOTWELL.in` `40` nhưng không sâu hơn dáng ngồi, trên sàn trong. Hông bắt đầu hạ khi chân còn
+  trên không. Thân cúi tới `BOARD_LEAN.peak` `28°` trong `SIT_PHASE.lean`; đỉnh đầu chưa dưới khung trên `HEAD_CLEAR` `4` thì
+  dò góc cúi gần nhất (cả cúi ít hơn, vì cột A nghiêng có khi chắn đầu cúi sâu) tới `BOARD_LEAN.max` `50°`; đầu cúi thêm
+  `BOARD_LEAN.head` `0,4` phần thân cúi.
+- *Pha rút* (`1,2 s`): chân phía cửa nhấc qua ngưỡng vào chỗ của dáng `gen sit` (`SWING_PHASE.outer`), chân phía xe dời từ
+  hốc chân tới chỗ của dáng ngồi, nhấc `SHUFFLE_LIFT` `5` (`SWING_PHASE.inner`), thân ngồi thẳng về dáng ngồi
+  (`SWING_PHASE.upright`); mốc cuối là đúng dáng `gen sit`.
+- *Bước chân*: mỗi bước đi ngang trong `STEP.move`, nhấc theo một bướu lên hết ở `STEP.lift[0]`, hạ từ `STEP.lift[1]`. Mức
+  nhấc tìm từng mốc cho từng chân: ít nhất để đế giày trên ngưỡng hở `SOLE_CLEAR` `6` cộng `SILL_SLACK` `5` (chỗ nội suy giữa
+  hai mốc), trên sàn, nền không lún; nới sang mốc kề, dốc tối đa `LIFT_RATE` `6` mỗi mốc, bao một đỉnh, trần `LIFT_MAX` `90`.
+  Góc chân giải theo cổ chân đích và hông của từng mốc (IK hai đoạn có dang, ba lượt chỉnh theo FK của rig).
+- *Tay phía xe*: nắm mép khung trên (`DOOR_GRIP`: tâm nắm dời khỏi khung trên ở chỗ đáp `[14, 4, 5]` theo hướng ghế, ra
+  ngoài, xuống) khi vai với tới chỗ ấy (dưới `0,97` chiều dài tay) suốt quãng nắm; tay đi thẳng từ lòng tay lúc đứng tới
+  đó trong `0,13…0,45` của pha hạ, khuỷu ra ngoài, xuống từ phần `0,25` đường đi; buông trước khi hông đáp (`0,72…0,97` của
+  pha hạ), xuống đùi cùng bên, khuỷu giữ hướng lúc nắm. Ngồi đáp rồi mép khung trên đã cao quá tầm tay nên không nắm qua
+  lúc ấy. Vai không với tới trong quãng nắm (người thấp, khung trên cao) thì lòng tay đặt lên đùi cùng bên suốt lượt (`LAP`:
+  phần `0,55` từ khớp hông tới gối, nhích lên `9`, tới đó trong `0,35…0,8` của pha hạ).
+- *Tay phía cửa*: lòng tay áp cạnh hông, tì đùi từ phần `0,5` pha hạ, tì mặt ngồi cạnh hông (`SEAT_HAND`) từ phần `0,85`
+  pha hạ tới nửa pha rút, rồi về đùi.
+- Mọi chỗ đặt tay là điểm thế giới đi theo thân (mốc thân `rig.bodyMarkAt`, đùi theo chân của mốc); đổi chỗ thì hoà chỗ cũ
+  sang chỗ mới trong `HAND_BLEND` `0,3 s`. Tới phần `LAP_UNTIL` `0,85` pha rút hai tay trên đùi, rồi hoà về tay của dáng
+  ngồi ở mốc cuối. Mốc đứng ghi góc tay như `stand-3d`; các mốc trong `ARM_RAMP` `0,2 s` đầu (người còn đứng yên) không ghi
+  tay, nên tay hoà từ góc khớp sang đích suốt quãng ấy thay vì nhảy trong một mốc. Track một tay chồng trên (khoác túi,
+  cầm) vẫn đè tay ấy.
+
+**Tự kiểm** trên cảnh đã vá, mỗi khung trong quãng sinh:
+
+| Luật | Đo | Ngưỡng |
+|---|---|---|
+| `plant` | bàn chân đứng yên so với chỗ đặt: chân phía cửa suốt pha hạ; chân phía xe trước khi bước và trong hốc chân từ lúc đặt tới khi bắt đầu dời ở pha rút | dời quá `2 · s` là cảnh báo, quá `4 · s` là lỗi |
+| `sole` | đế giày (gót, mũi của viên nang giày) so với mặt dưới nó: ngưỡng (trong bề dày ngưỡng, trừ `SOLE_CLEAR`), nền ngoài (ra ngoài), sàn trong (vào trong); không tìm được mức nhấc qua ngưỡng dưới `LIFT_MAX` cũng là lỗi, báo theo chân | dưới `−1 · s` cảnh báo, dưới `−2 · s` lỗi |
+| `head` | đỉnh đầu (`headBoxOf`) so với khung trên ở vị trí dọc ngưỡng ấy, khi đầu chưa ra hẳn ngoài mặt khung | dưới `HEAD_CLEAR` cảnh báo, chạm là lỗi |
+| `legReach` | cổ chân tới đích của bộ giải (báo giây thiếu nhiều nhất) | thiếu quá `2 · s` là lỗi |
+| `legRange` | góc chân của mọi mốc (`LEG_RANGE`) | đùi quá `140°`, gối ngoài `−160…0°`, dang ngoài `−20…60°` là lỗi |
+| cổ tay, tầm với | `coreChecks` của `gen-check.mjs`, hai tay | như `pour` |
+| `check` | `move`, `clash` (cần `stickman.world`; chân, thân, tay trên hình thật của ô cửa, ghế, thân xe), `held` khi người cầm đồ — so với cảnh nền: cảnh bỏ mọi mốc, clip từ `--at`, người ngồi yên (ra) hay đứng yên (vào) ở chỗ lúc ấy; chạy lại trên cảnh đã sinh không lấy lần sinh trước làm mốc | dòng mới chặn ghi |
+
+Không đạt thì không ghi gì, in gợi ý theo nguyên nhân (đầu chạm khung: ghế lùi, hạ mặt ngồi; chân vướng ngưỡng: điểm ngồi xa
+đầu ngưỡng, ngưỡng thấp hơn; lồng vào đồ: dời ghế, đổi điểm ngồi dọc ngưỡng). Đồ không mang vai trò (vô lăng, bàn đạp,
+táp-lô) chỉ hiện ở `clash`, không vào phép tính. `--force` ghi kèm cảnh báo.
+
+- **Chỗ thay ở `--at`** như `gen walk`: mốc `path` và clip của track nền từ `--at` bị thay (`[board, sau]`), phần trước giữ;
+  người chưa có `path` thì giữ chỗ cũ bằng mốc giây `0`. `world.sit` bỏ, `world.floor` thành sàn trong của ô cửa — nền ngoài
+  chỉ đỡ bàn chân trong phép tính và tự kiểm; trong quãng mốc `sit` rig vẽ bóng theo `world.floor`, nên lúc còn đứng ngoài
+  bóng đổ ở cao sàn trong. Chạy lại trên cảnh đã sinh thì dáng ngồi đầu (ra) đo trên cảnh bỏ mọi thứ từ `--at`.
+- **Ghi** như `gen walk` (vá JSON thô, so hash, `.bak`), cộng `actions/<name>.json` (và `sit-…-3d` khi vào). Hành động khai
+  `preview.stage` `sit-down` / `stand-up`; ô cửa, ghế, sàn hay người đổi thì sinh lại, không sửa tay.
+- **Chưa có**: một ô cửa, một chỗ ngồi mỗi lệnh — ghế sau xa cửa, trèo qua ghế khác không thuộc kiểu này; tay vịn trong xe,
+  mở, đóng cửa không thuộc lệnh.
 
 ## Tiếng và phụ đề trong Studio 3D
 

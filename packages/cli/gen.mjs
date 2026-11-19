@@ -14,6 +14,46 @@ import {
   sampleTimes,
   worldChecks,
 } from "./gen-check.mjs";
+import {
+  ARM_RAMP,
+  BOARD_LEAN,
+  BOARD_STEP,
+  BOARD_TIME,
+  BOARD_YAW,
+  DOOR_GRIP,
+  HAND_BLEND,
+  EDGE_IN,
+  FOOTWELL,
+  HEAD_CLEAR,
+  HEEL_GAP,
+  LAP_UNTIL,
+  LEG_RANGE,
+  LAND,
+  LAND_REACH,
+  LAP,
+  LIFT_MAX,
+  LIFT_RATE,
+  OUTER_HAND,
+  SEAT_HAND,
+  SHIN_SILL,
+  SHUFFLE_LIFT,
+  SILL_SLACK,
+  SIT_PHASE,
+  SOLE_CLEAR,
+  SOLE_FLOOR,
+  STAND_AHEAD,
+  STAND_ARMS,
+  STAND_LEGS,
+  SWING_PHASE,
+  doorFrame,
+  legAngles,
+  liftProfile,
+  rectReach,
+  span01,
+  stepFoot,
+  window01,
+  yawOfDir,
+} from "./gen-board.mjs";
 import { GEN_PAGES } from "./gen-pages.mjs";
 import {
   POUR_ALONG,
@@ -3225,6 +3265,1093 @@ export async function genWalk(o) {
   };
 }
 
+/** Hướng của `gen board`: vào (đứng ngoài ô cửa → ngồi), ra (ngồi → đứng ngoài) */
+export const BOARD_WAYS = ["in", "out"];
+/** Đồ ảo của `--door x,z,y ngưỡng,y khung trên`: bề dày ngưỡng; ngưỡng dài hơn mặt ngồi mỗi đầu (rig, nhân `h · s`) */
+const VIRTUAL_DOOR = { width: 20, more: 120 };
+/** Cờ của `gen sit` chuyển qua cho dáng ngồi ở đầu (ra) hay cuối (vào) */
+const SIT_FLAGS = [
+  "legs",
+  "back",
+  "hands",
+  "feet",
+  "tuck",
+  "top",
+  "elbow",
+  "table",
+  "armrest",
+  "backrest",
+  "footrest",
+];
+
+/**
+ * Sinh vào, ra chỗ ngồi qua ô cửa cho `cast` trong cảnh `scene` từ giây `at`: `way` `in` (đứng ngoài cạnh ô cửa nhìn dọc
+ * thân xe → chân phía xe bước qua ngưỡng cùng lúc thân cúi, hông hạ vào mặt ngồi → ngồi rồi rút chân phía cửa vào, quay về
+ * hướng ghế, nối clip `gen sit`) hay `out` (ngược lại: chân phía cửa ra trước, đứng dậy, chân phía xe ra sau cùng, nối
+ * `stand-3d`). Ô cửa (vai trò `doorway`) và mặt ngồi tìm theo slot của `GEN_KINDS.board`; `door` là tên vật hay
+ * `x,z,y ngưỡng,y khung trên` (đồ ảo), `ground` đè nền ngoài. Ghi `world.path` (mốc đứng, mốc `sit` lái hông mỗi `BOARD_STEP`),
+ * `world.floor` và clip vào cảnh như `gen walk`, hành động `board-<way>-<cảnh>-<người>-3d` vào `actions/` (vào thì kèm
+ * hành động `gen sit` của chỗ ngồi cuối). Trả như `genWalk`; sai đầu vào hay ngoài tầm thì ném `GenError`
+ */
+export async function genBoard(o) {
+  const root = resolve(o.dir ?? ".");
+  const way = o.way;
+  if (!BOARD_WAYS.includes(way)) fail(`--way nhận in | out, không phải \`${way ?? ""}\``);
+  if (!o.scene) fail("thiếu --scene <id cảnh>");
+  if (!o.cast) fail("thiếu --cast <id người>");
+  const sd = sceneData(root, o);
+  const { data, raw, scene, chars, c, runtimeOf, rt0, marks } = sd;
+  const relScene = `scenes/${o.scene}.json`;
+  if (o.hash !== undefined && o.hash !== null && sd.hash !== undefined && o.hash !== sd.hash)
+    throw new GenConflict(
+      `${relScene} đã đổi trên đĩa so với bản đã có (hash ${String(o.hash).slice(0, 12)}…) — đọc lại cảnh rồi sinh lại`,
+      sd.hash,
+    );
+  if (!c.palette?.clad) fail(`\`${o.cast}\` phải là người mặc đồ có bàn tay (\`palette.clad\`)`);
+  const id = o.cast;
+  const at = timeOf(o.at, marks, "--at") ?? 0;
+  if (at < 0 || at > rt0.duration) fail(`--at ${at} ngoài cảnh (0 … ${rt0.duration} s)`);
+  const h = c.rig.height;
+  const body = rt0.bodies[id];
+  const W0 = rig.sceneAt(rt0, id, at, h, body).world;
+  const s = W0.s;
+  const hs = h * s;
+  if (way === "out" && !W0.seated)
+    fail(
+      `\`${id}\` không ngồi ở giây ${at} — gen board --way out cần người đang ngồi (\`world.sit\` hay mốc \`sit\` của \`path\`)`,
+    );
+  if (way === "in" && W0.seated)
+    fail(`\`${id}\` đang ngồi ở giây ${at} — gen board --way in cần người đứng ngoài ô cửa`);
+  const sitAt0 = [W0.hip[0], W0.hip[1] + body.legHalf * s, W0.hip[2]];
+  const T1 = BOARD_TIME.sit;
+  const T2 = BOARD_TIME.swing;
+  const T = T1 + T2;
+  const tEnd = at + T;
+
+  // ô cửa, mặt ngồi theo vai trò ở giây `at`
+  const three = await sceneThree(root, o, scene, data);
+  const props = three.none ? [] : three.propsAt(at);
+  const SLOTS = Object.fromEntries(GEN_KINDS.board.roles.map((k) => [k.slot, k]));
+  const fDoor = flagOf(SLOTS.door, o);
+  const fSeat = flagOf(SLOTS.seat, o);
+  if (fDoor?.none || fSeat?.none)
+    fail("gen board luôn cần ô cửa và mặt ngồi: --door, --seat không nhận `none`");
+  if (fSeat?.numbers) fail(`--seat nhận tên vật (\`vật\`, \`vật#mục\`), không nhận số`);
+  const window0 = [at, Math.min(tEnd, rt0.duration)];
+  const where = three.none ? ` — ${three.none}` : "";
+  let seatE = fSeat ? namedEntries(props, SLOTS.seat, fSeat.name, three.none)[0] : undefined;
+  if (!seatE && way === "out") {
+    const under = entriesOf(props, "seat").filter(
+      (e) =>
+        rectHolds(e.role, sitAt0, SEAT_RULE.grow * s) &&
+        Math.abs(sitAt0[1] - e.role.at[1]) < SEAT_RULE.error * s,
+    );
+    if (!under.length)
+      fail(
+        `không thấy mặt ngồi dưới \`${id}\` ở giây ${at} (vai trò \`seat\` chứa điểm ngồi, lệch độ cao dưới ${comma(SEAT_RULE.error * s)}); ${carrierList(props, "seat")}${where}; hay --seat <vật>`,
+      );
+    seatE = under[0];
+  }
+  let doorE;
+  if (fDoor?.name) doorE = namedEntries(props, SLOTS.door, fDoor.name, three.none)[0];
+  else if (fDoor?.numbers) {
+    const n = fDoor.numbers;
+    if (n.length !== 4)
+      fail(`--door nhận <vật | vật#mục | x,z,y ngưỡng,y khung trên>, không phải \`${o.door}\``);
+    if (!seatE) fail("--door số (đồ ảo) đi với --seat <vật>: ô cửa ảo dựng dọc mặt ngồi ấy");
+    const r = seatE.role;
+    const F = r.front;
+    const S = [-F[2], 0, F[0]];
+    const P = [n[0], n[2], n[1]];
+    const side = Math.sign(dot(sub(P, r.at), S)) || 1;
+    const half = r.size[0] / 2 + VIRTUAL_DOOR.more * hs;
+    const y = (p) => [p[0], n[3], p[2]];
+    const from = sub(P, mul(F, half));
+    const to = add(P, mul(F, half));
+    const floor = numFlag(
+      o.ground,
+      W0.floor,
+      "--ground",
+      Number.isFinite,
+      "là số (y thế giới rig)",
+    );
+    doorE = virtualEntries(`ô cửa ảo ${n.join(",")}`, [
+      {
+        role: "doorway",
+        sill: { from, to, width: VIRTUAL_DOOR.width * s },
+        head: [y(from), y(to)],
+        out: mul(S, side),
+        floor: Math.max(W0.floor, n[2]),
+        ground: Math.max(floor, n[2]),
+      },
+    ])[0];
+  } else {
+    const ref = way === "out" ? seatE.role.at : W0.hip;
+    const list = entriesOf(props, "doorway")
+      .map((e) => ({ e, fr: doorFrame(e.role) }))
+      .map((x) => ({ ...x, p: x.fr.local(ref) }))
+      .filter(({ fr, p }) => (way === "out" ? p.n < 0 : p.n > 0) && Math.abs(p.u) <= fr.half)
+      .sort((a, b) => Math.abs(a.p.n) - Math.abs(b.p.n));
+    if (!list.length)
+      fail(
+        `không thấy ô cửa ${way === "out" ? "cạnh mặt ngồi" : "sau lưng"} \`${id}\` (vai trò \`doorway\`: ${way === "out" ? "mặt ngồi" : "người"} ở phía ${way === "out" ? "trong" : "ngoài"}, trong chiều dài ngưỡng); ${carrierList(props, "doorway")}${where}; hay --door <vật | x,z,y ngưỡng,y khung trên>`,
+      );
+    doorE = list[0].e;
+  }
+  const doorT = trackEntry(doorE, three, window0);
+  const door = doorE.role;
+  const fr = doorFrame(door);
+  if (!seatE) {
+    const list = entriesOf(props, "seat")
+      .map((e) => ({ e, p: fr.local(e.role.at), reach: rectReach(e.role, fr.N) }))
+      .filter(({ p }) => p.n < 0 && Math.abs(p.u) <= fr.half)
+      .sort((a, b) => b.p.n + b.reach - (a.p.n + a.reach));
+    if (!list.length)
+      fail(
+        `không thấy mặt ngồi phía trong ô cửa \`${entryName(doorE.prop, door)}\` (vai trò \`seat\`, trong chiều dài ngưỡng); ${carrierList(props, "seat")}${where}; hay --seat <vật>`,
+      );
+    seatE = list[0].e;
+  }
+  const seatT = trackEntry(seatE, three, window0);
+  const seat = seatE.role;
+  const ground = numFlag(
+    o.ground,
+    fr.ground,
+    "--ground",
+    Number.isFinite,
+    "là số (y thế giới rig)",
+  );
+  const doorName = doorE.prop.virtual ? doorE.prop.name : `\`${entryName(doorE.prop, door)}\``;
+  const seatName = `\`${entryName(seatE.prop, seat)}\``;
+
+  // chỗ: chỗ ngồi cuối (vào) / đầu (ra), chỗ hông đáp mặt ngồi, chỗ đứng ngoài
+  const yawOut = yawOfDir(fr.N);
+  const yawSeat = yawOfDir(seat.front);
+  const turn = rig.yawDelta(yawOut, yawSeat);
+  if (Math.abs(Math.abs(turn) - 90) > 30)
+    fail(
+      `mặt ngồi ${seatName} nhìn lệch hướng ra của ô cửa ${doorName} ${r1(turn)}° — gen board cần ghế nhìn dọc ô cửa (90° ± 30°)`,
+    );
+  const wrapYaw = (y) => r1(((y % 360) + 360) % 360);
+  /** Hướng thân quay ra phía cửa `deg` độ so với hướng ghế */
+  const yawAt = (deg) => wrapYaw(yawSeat - Math.sign(turn) * deg);
+  const ahead = Math.sign(dot(seat.front, fr.A)) || 1;
+  const sitIn = way === "out" ? sitAt0 : seat.at;
+  const inL = fr.local(sitIn);
+  const edgeN = fr.local(seat.at).n + rectReach(seat, fr.N);
+  const landEdge = edgeN - EDGE_IN * hs;
+  const landDeep = Math.min(inL.n + (edgeN - inL.n) * LAND, landEdge);
+  let E = fr.world(inL.u, landDeep, seat.at[1]);
+  const headR = rig.headBoxOf(c).ry * s;
+  const uStand = inL.u + ahead * STAND_AHEAD * hs;
+  const yawStand = yawAt(BOARD_YAW.stand);
+  const notes = [];
+  if (Math.abs(inL.u) > fr.half - 20 * hs)
+    notes.push(
+      `cảnh báo: điểm ngồi sát đầu ngưỡng (cách ${comma(fr.half - Math.abs(inL.u))}) — chân có thể vướng khung`,
+    );
+
+  // mốc `path` theo pha (τ của chiều vào), giây cảnh `tOf(τ)`; mốc `sit` khai điểm dưới hông `legHalf · s`
+  const tOf = (tau) => (way === "in" ? at + tau : at + T - tau);
+  const nA = Math.round(T1 / BOARD_STEP);
+  const nB = Math.round(T2 / BOARD_STEP);
+  const lerp3 = (a, b, k) => a.map((v, i) => v + (b[i] - v) * k);
+  const hipSit = body.legHalf * s;
+  const keysFor = (Hs, hipStand) => {
+    const ks = [{ tau: 0, at: Hs, yaw: yawStand }];
+    if (hipStand !== undefined) {
+      for (let i = 1; i <= nA; i++) {
+        const v = i / nA;
+        const k = window01(v, ...SIT_PHASE.side);
+        const y = hipStand + (E[1] - hipSit - hipStand) * window01(v, ...SIT_PHASE.down);
+        const turnV = window01(v, ...SIT_PHASE.yaw);
+        ks.push({
+          tau: T1 * v,
+          at: [Hs[0] + (E[0] - Hs[0]) * k, y + hipSit, Hs[2] + (E[2] - Hs[2]) * k],
+          yaw: yawAt(BOARD_YAW.stand + (BOARD_YAW.land - BOARD_YAW.stand) * turnV),
+          sit: true,
+        });
+      }
+      for (let i = 1; i <= nB; i++) {
+        const w = i / nB;
+        ks.push({
+          tau: T1 + T2 * w,
+          at: lerp3(E, sitIn, window01(w, ...SWING_PHASE.slide)),
+          yaw: yawAt(BOARD_YAW.land * (1 - window01(w, ...SWING_PHASE.yaw))),
+          sit: true,
+        });
+      }
+    }
+    const out = ks.map((k) => ({
+      t: r3(tOf(k.tau)),
+      at: k.at.map(r1),
+      yaw: k.yaw,
+      ...(k.sit && { sit: true }),
+    }));
+    return way === "out" ? out.reverse() : out;
+  };
+
+  // phần giữ của cảnh: mốc trước `at`, clip trước `at` của track nền
+  const rawM = raw.cast.find((x) => x.id === id);
+  const timeAt = (v) => rig.markTime(v, marks);
+  const rawPath = rawM.world.path ?? [];
+  const keptPath = rawPath.filter((k) => timeAt(k.t) < at - 1e-9);
+  const dropped = rawPath.filter((k) => timeAt(k.t) >= at - 1e-9);
+  // không còn mốc trước `at`: giữ chỗ lúc đầu cảnh (mốc đầu của `path` cũ, hay `world.at`) bằng mốc giây 0
+  const first = rawPath[0];
+  const head0 =
+    !keptPath.length && at > 0
+      ? [
+          first
+            ? { t: 0, at: first.at, yaw: first.yaw ?? 0, ...(first.sit && { sit: true }) }
+            : {
+                t: 0,
+                at: rawM.world.at,
+                yaw: rawM.world.yaw ?? 0,
+                ...(rawM.world.sit && { sit: true }),
+              },
+        ]
+      : [];
+  const rawTracks = rawM.tracks ?? [];
+  const TR =
+    o.track !== undefined
+      ? rawTracks.findIndex((tr) => tr.name === o.track)
+      : (rig.legSourceAt(rt0, id, at)?.track ?? -1);
+  if (TR < 0)
+    fail(
+      `không thấy track ghi chân của \`${id}\` lúc giây ${at}${o.track !== undefined ? ` (--track ${o.track})` : ""} — thêm track nền (\`stand-3d\`, clip ngồi) hay --track <tên>`,
+    );
+  const trackName = rawTracks[TR].name ?? `#${TR}`;
+  const keptClips = rawTracks[TR].clips.filter((k) => timeAt(k.start ?? 0) < at - 1e-9);
+  const gone = rawTracks[TR].clips.filter((k) => timeAt(k.start ?? 0) >= at - 1e-9);
+  const equip = gone.find((k) => k.equip);
+  if (equip)
+    fail(
+      `clip \`${equip.action ?? "rỗng"}\` giây ${equip.start} của track \`${trackName}\` có \`equip\` — gen board thay mọi clip từ --at; dời \`equip\` sang track khác`,
+    );
+  const name = o.name ?? `board-${way}-${o.scene}-${id}-3d`;
+  const sitName = `sit-${o.scene}-${id}-3d`;
+  const after = { action: way === "in" ? sitName : "stand-3d", start: r3(tEnd) };
+  let keys = [];
+  const sceneWith = (board, afterClip) => {
+    const next = sceneWithWalk(raw, id, {
+      path: [...keptPath, ...head0, ...keys],
+      tracks: rawTracks.map((tr, k) =>
+        k === TR ? { ...tr, clips: [...keptClips, { action: board, start: at }, afterClip] } : tr,
+      ),
+    });
+    const m = next.cast.find((x) => x.id === id);
+    delete m.world.sit;
+    m.world.floor = r1(fr.floor);
+    return next;
+  };
+  const durationOf = raw.duration;
+  if (durationOf !== undefined && durationOf < tEnd + 0.2)
+    fail(
+      `cảnh hết ở giây ${durationOf}, cần tới ${r3(tEnd + 0.2)} — khai \`duration\` cho cảnh hay chọn --at sớm hơn`,
+    );
+  const parseOr = (json, what) => {
+    const p = rig.parseScene(json);
+    if (!p.success) fail(`cảnh ${what} không qua schema: ${p.error.issues?.[0]?.message}`);
+    return p.data;
+  };
+  // hông của mốc đứng đo theo chân của dáng lúc ấy: hành động tạm giữ chân đứng suốt quãng
+  const placeholder = rig.parseAction({
+    schemaVersion: rig.ACTION_VERSION,
+    name,
+    duration: r3(T),
+    end: "hold",
+    authoredAt: "side",
+    mask: ["legLeft", "legRight"],
+    keys: [0, 1].map((t) => ({
+      t,
+      pose: { legLeft: STAND_LEGS.left, legRight: STAND_LEGS.right },
+    })),
+    events: [],
+  }).data;
+  const runtimeWith = (what) => {
+    try {
+      return runtimeOf(
+        parseOr(sceneWith(name, { ...after, action: way === "in" ? "sit-3d" : "stand-3d" }), what),
+        { ...data.actions, [name]: placeholder },
+      );
+    } catch (e) {
+      if (e instanceof GenError) throw e;
+      fail(`cảnh ${what} không dựng được: ${e.message}`);
+    }
+  };
+
+  // giải chân, thân, đầu
+  const len3 = rig.lengths(h);
+  const spAt = (rt, t) => rig.sceneAt(rt, id, t, h, rt.bodies[id]);
+  const legOf = (v) => (v ? [v[0], v[1], v[2] ?? 0] : undefined);
+  const withLegs = (sp, legs, extra = {}) => ({
+    ...sp,
+    pose: { ...sp.pose, lr: legs.right, ll: legs.left, ...extra },
+  });
+  const ankles = (sp, legs) => {
+    const [L, R] = rig.legs3World(withLegs(sp, legs).pose, sp.world, h, body.hipHalf);
+    return { left: L[2], right: R[2] };
+  };
+  const shinPhi = (leg) => leg[0] + leg[1];
+  const standL = { right: legOf(STAND_LEGS.right), left: legOf(STAND_LEGS.left) };
+  /** Gót, mũi của đế giày một chân (thế giới) */
+  const soleEnds = (sp, leg, ankle) => {
+    const F = frameOf(sp.world.hip, sp.world.yaw);
+    const sh = shoeAt(c, shinPhi(leg), s);
+    return { sh, ends: [sh.heel, sh.toe].map((q) => add(ankle, [F.F[0] * q[0], -q[1], F.F[2] * q[0]])) };
+  };
+
+  // chỗ đứng: đế giày đứng ngoài mép ngoài ngưỡng `HEEL_GAP`, đầu ngoài mặt khung trên; hông đứng đo trên cảnh tạm
+  const headOut = fr.headN + headR + HEAD_CLEAR * s;
+  let nStand = Math.max(fr.outer + HEEL_GAP * s + body.hipHalf * s * 2, headOut);
+  let hipStand;
+  let A0;
+  let nMeasured;
+  for (let pass = 0; pass < 2; pass++) {
+    nMeasured = nStand;
+    keys = keysFor(fr.world(uStand, nStand, ground));
+    const sp = spAt(runtimeWith("lúc đứng"), tOf(0));
+    A0 = ankles(sp, standL);
+    let min = Infinity;
+    for (const k of ["right", "left"]) {
+      const { sh, ends } = soleEnds(sp, standL[k], A0[k]);
+      for (const p of ends) min = Math.min(min, fr.local(p).n - sh.r);
+    }
+    hipStand = sp.world.hip[1];
+    nStand = Math.max(nStand + fr.outer + HEEL_GAP * s - min, headOut);
+  }
+  const Hs = fr.world(uStand, nStand, ground);
+  for (const k of ["right", "left"]) A0[k] = add(A0[k], mul(fr.N, nStand - nMeasured));
+  const innerLeg = fr.local(A0.right).n < fr.local(A0.left).n ? "right" : "left";
+  const legName = { right: "phải", left: "trái" };
+  const outerLeg = innerLeg === "right" ? "left" : "right";
+  // chỗ đáp: sâu nhất từ `LAND` tới mép mà chân phía cửa, còn trên nền ngoài, với tới (người thấp đáp gần mép hơn)
+  {
+    const len3 = rig.lengths(h);
+    const reach = LAND_REACH * (len3.thigh + len3.shin) * s + 0.5 * body.hipHalf * s;
+    for (let n = landDeep; n <= landEdge + 1e-9; n += hs) {
+      E = fr.world(inL.u, n, seat.at[1]);
+      if (len(sub([E[0], E[1] - hipSit, E[2]], A0[outerLeg])) <= reach) break;
+    }
+  }
+
+  // người phải đứng sẵn ở chỗ đứng (vào), trên nền ô cửa
+  const yaw0 = r1((((W0.yaw / D) % 360) + 360) % 360);
+  if (way === "in") {
+    const off = Math.hypot(W0.hip[0] - Hs[0], W0.hip[2] - Hs[2]);
+    const dy = Math.abs(rig.yawDelta(yaw0, yawStand));
+    if (off > 2 * s || dy > 2)
+      fail(
+        `\`${id}\` đứng ở ${r1(W0.hip[0])},${r1(W0.hip[2])} hướng ${yaw0}° lúc giây ${at}; vào qua ô cửa ${doorName} tới ${seatName} cần đứng ở ${r1(Hs[0])},${r1(Hs[2])} hướng ${yawStand}° (dọc thân xe về phía ghế nhìn, quay ra phía cửa ${BOARD_YAW.stand}°) — đưa người tới bằng \`gen walk --to "${r1(Hs[0])},${r1(Hs[2])}!${yawStand}"\` rồi --at sau lúc dừng, hay khai \`world.at\` / \`yaw\` ấy`,
+      );
+    if (Math.abs(W0.floor - ground) > 2 * s)
+      fail(
+        `\`${id}\` đứng trên nền y ${comma(W0.floor)}, ô cửa ${doorName} khai nền ngoài y ${comma(ground)} — sửa mốc đứng, \`ground\` của vai trò hay --ground`,
+      );
+  }
+  keys = keysFor(Hs, hipStand);
+  let rtA0 = runtimeWith("sau khi đặt mốc");
+
+  // dáng ngồi của `gen sit` ở chỗ ngồi cuối (vào) / đầu (ra)
+  const sceneSit = sceneWith("stand-3d", { ...after, action: "sit-3d" });
+  // cảnh nền: bỏ mọi thứ từ `at`, người giữ chỗ lúc ấy — dáng ngồi đầu (ra) đo trên nó, tự kiểm so với nó (chạy lại trên
+  // cảnh đã sinh không lấy lần sinh trước làm mốc)
+  const baseClips = keptClips.length
+    ? keptClips
+    : [{ action: way === "out" ? "sit-3d" : "stand-3d", start: at }];
+  const baseTracks = rawTracks.map((tr, k) => (k === TR ? { ...tr, clips: baseClips } : tr));
+  const basePath = [...keptPath, ...head0];
+  const sceneBase = basePath.length
+    ? sceneWithWalk(raw, id, { path: basePath, tracks: baseTracks })
+    : {
+        ...structuredClone(raw),
+        cast: raw.cast.map((x) =>
+          x.id === id ? { ...structuredClone(x), tracks: baseTracks } : x,
+        ),
+      };
+  // ngồi theo mốc `sit` của `path`: `world.sit` (người ngồi đứng yên ở `world.at`) không đi cùng
+  if (basePath.length) delete sceneBase.cast.find((x) => x.id === id).world.sit;
+  const sitOpts = Object.fromEntries(
+    SIT_FLAGS.filter((k) => o[k] !== undefined).map((k) => [k, o[k]]),
+  );
+  let sitRes;
+  try {
+    sitRes = await genSit({
+      ...sitOpts,
+      dir: root,
+      scene: o.scene,
+      cast: id,
+      name: sitName,
+      dryRun: true,
+      at: way === "in" ? r3(tEnd) : at,
+      ...(way === "in" &&
+        (o.stage ? { stage: { ...o.stage, sceneJson: sceneSit } } : { sceneJson: sceneSit })),
+      ...(way === "out" &&
+        (o.stage ? { stage: { ...o.stage, sceneJson: sceneBase } } : { sceneJson: sceneBase })),
+    });
+  } catch (e) {
+    if (e instanceof GenError)
+      fail(
+        `dáng ngồi ${way === "in" ? "cuối" : "đầu"} (gen sit ở giây ${way === "in" ? r3(tEnd) : at}): ${e.message}`,
+      );
+    throw e;
+  }
+  const sitKey = sitRes.action.keys[0];
+  if (way === "out") {
+    const clip = baseClips.at(-1);
+    if (clip.action !== sitName)
+      notes.push(
+        `cảnh báo: clip ngồi đang chạy lúc giây ${at} là \`${clip.action ?? "rỗng"}\`, không phải \`${sitName}\` — dáng đầu lấy theo \`gen sit\` cùng cờ; chạy \`gen sit\` trước cho khỏi giật`,
+      );
+  }
+  const sitLegs = { right: legOf(sitKey.pose.legRight), left: legOf(sitKey.pose.legLeft) };
+  const lat = { right: body.hipHalf, left: -body.hipHalf };
+  const st = spAt(rtA0, at).pose.stretch ?? [];
+  const lens = {
+    right: [len3.thigh * (st[6] ?? 1), len3.shin * (st[7] ?? 1)],
+    left: [len3.thigh * (st[4] ?? 1), len3.shin * (st[5] ?? 1)],
+  };
+  /** Góc chân cho cổ chân tới `target` (thế giới) trên khung `sp`, tinh lại bằng FK hai lượt */
+  const solveLegs = (sp, targets) => {
+    const F = frameOf(sp.world.hip, sp.world.yaw);
+    const out = {};
+    let short = 0;
+    const goal = { ...targets };
+    for (let pass = 0; pass < 3; pass++) {
+      for (const side of ["right", "left"]) {
+        const l = F.local(goal[side]);
+        const r = legAngles([l[0] / s, -l[1] / s, l[2] / s], lat[side], ...lens[side]);
+        out[side] = r.leg;
+        if (pass === 2) short = Math.max(short, r.reach * s);
+      }
+      const got = ankles(sp, out);
+      for (const side of ["right", "left"])
+        goal[side] = add(goal[side], sub(targets[side], got[side]));
+    }
+    const got = ankles(sp, out);
+    const err = Math.max(...["right", "left"].map((k) => len(sub(got[k], targets[k]))));
+    return { legs: out, short, err };
+  };
+  /** Đế giày, chỗ đỡ dưới gót và mũi của một chân (thế giới): `{ gap, over }`, gap âm là lún; `over` `sill` khi trên ngưỡng */
+  const soleOf = (sp, leg, ankle) => {
+    const { sh, ends } = soleEnds(sp, leg, ankle);
+    let worst = { gap: Infinity };
+    for (const p of ends) {
+      const L = fr.local(p);
+      const onSill = L.n <= fr.outer + sh.r && L.n >= fr.inner - sh.r && Math.abs(L.u) <= fr.half;
+      const y = onSill ? fr.sillY(L.u) : L.n > 0 ? ground : fr.floor;
+      const gap = y - (p[1] + sh.r) - (onSill ? SOLE_CLEAR * s : 0);
+      if (gap < worst.gap) worst = { gap, over: onSill ? "sill" : L.n > 0 ? "ground" : "floor" };
+    }
+    return worst;
+  };
+  const soleOk = (g) => g.gap >= (g.over === "sill" ? SILL_SLACK * s : -SOLE_FLOOR * s * 0.5);
+  const slab = Math.max(fr.outer - fr.inner, 2 * HEAD_CLEAR * s);
+  const headAt = (sp, pose) => {
+    const J = rig.actJoints(c, { ...sp, pose: { ...sp.pose, ...pose } });
+    const p = fr.local(J.head);
+    if (p.n - headR > fr.headN || p.n + headR < fr.headN - slab) return undefined;
+    return J.head[1] - headR - fr.headY(p.u);
+  };
+
+  // ống chân phía cửa (bàn chân còn trên nền ngoài) hở trên mép ngưỡng từ phần `SHIN_SILL.from` pha hạ tới lúc nhấc ở pha
+  // rút; lấn thì chỗ đáp lùi ra phía mép
+  const shinGap = (sp, legs) => {
+    const [L, R] = rig.legs3World(withLegs(sp, legs).pose, sp.world, h, body.hipHalf);
+    const [, K, A] = outerLeg === "right" ? R : L;
+    const k = fr.local(K);
+    const a = fr.local(A);
+    let gap = Infinity;
+    for (const n of [fr.inner, fr.outer]) {
+      if ((k.n - n) * (a.n - n) >= 0) continue;
+      const t = (n - k.n) / (a.n - k.n);
+      gap = Math.min(gap, fr.sillY(k.u + (a.u - k.u) * t) - (k.y + (a.y - k.y) * t));
+    }
+    return gap;
+  };
+  const outerRest = [A0[outerLeg][0], ground - soleDrop(c, 0, s), A0[outerLeg][2]];
+  const innerRest = [A0[innerLeg][0], ground - soleDrop(c, 0, s), A0[innerLeg][2]];
+  const shinWorst = () => {
+    let worst = Infinity;
+    for (let tau = SHIN_SILL.from * T1; tau <= T1 + SHIN_SILL.until * T2 + 1e-9; tau += BOARD_STEP / 2) {
+      const sp = spAt(rtA0, tOf(Math.min(T - 1e-3, Math.max(1e-3, tau))));
+      const r = solveLegs(sp, { [outerLeg]: outerRest, [innerLeg]: innerRest });
+      worst = Math.min(worst, shinGap(sp, r.legs));
+    }
+    return worst;
+  };
+  let shinClear = shinWorst();
+  for (let n = fr.local(E).n + SHIN_SILL.step * hs; shinClear < SHIN_SILL.gap * s && n <= landEdge + 1e-9; n += SHIN_SILL.step * hs) {
+    E = fr.world(inL.u, n, seat.at[1]);
+    keys = keysFor(Hs, hipStand);
+    rtA0 = runtimeWith("sau khi đặt mốc");
+    shinClear = shinWorst();
+  }
+  if (shinClear < SHIN_SILL.gap * s)
+    notes.push(
+      `cảnh báo: ống chân ${legName[outerLeg]} còn hở trên mép ngưỡng ${comma(shinClear)} lúc ngồi mép (đòi ${comma(SHIN_SILL.gap * s)}) dù hông đáp sát mép mặt ngồi — ngưỡng cao so với chân người`,
+    );
+
+  // điểm đỡ bàn chân (y mặt đỡ): lúc đứng, hốc chân của chân phía xe, chỗ của dáng ngồi
+  const tIn = (tau) => tOf(Math.min(T - 1e-3, Math.max(1e-3, tau)));
+  const sp0 = spAt(rtA0, tIn(0));
+  const spS = spAt(rtA0, tIn(T));
+  const AS = ankles(sp0, standL);
+  const AF = ankles(spS, sitLegs);
+  const onSurface = (p, y) => [p[0], y, p[2]];
+  const restOf = (k) => add(AF[k], [0, soleDrop(c, shinPhi(sitLegs[k]), s), 0]);
+  const G = {
+    i0: onSurface(AS[innerLeg], ground),
+    o0: onSurface(AS[outerLeg], ground),
+    iF: restOf(innerLeg),
+    oF: restOf(outerLeg),
+  };
+  {
+    const a = fr.local(G.i0);
+    const b = fr.local(G.iF);
+    G.i1 = fr.world(
+      a.u + (b.u - a.u) * FOOTWELL.along,
+      Math.max(b.n, fr.inner - FOOTWELL.in * hs),
+      fr.floor,
+    );
+  }
+  /** Điểm đỡ của hai bàn chân ở τ với mức nhấc `lifts` của bước chân phía xe (pha hạ), chân phía cửa (pha rút) */
+  const supportAt = (tau, lifts) => {
+    if (tau <= T1) {
+      const k = span01(tau / T1, SIT_PHASE.step);
+      return { [outerLeg]: G.o0, [innerLeg]: stepFoot(G.i0, G.i1, k, lifts.inner) };
+    }
+    const w = (tau - T1) / T2;
+    return {
+      [outerLeg]: stepFoot(G.o0, G.oF, span01(w, SWING_PHASE.outer), lifts.outer),
+      [innerLeg]: stepFoot(G.i1, G.iF, span01(w, SWING_PHASE.inner), SHUFFLE_LIFT * hs),
+    };
+  };
+  const solveAt = (tau, lifts) => {
+    const sp = spAt(rtA0, tIn(tau));
+    const P = supportAt(tau, lifts);
+    if (tau >= T - 1e-9) return { tau, sp, legs: sitLegs, targets: AF, short: 0, err: 0 };
+    const aim = (legs) =>
+      Object.fromEntries(
+        ["right", "left"].map((k) => [
+          k,
+          [P[k][0], P[k][1] - soleDrop(c, legs ? shinPhi(legs[k]) : 0, s), P[k][2]],
+        ]),
+      );
+    let targets = aim();
+    let r = solveLegs(sp, targets);
+    for (let pass = 0; pass < 2; pass++) {
+      targets = aim(r.legs);
+      r = solveLegs(sp, targets);
+    }
+    return { tau, sp, legs: r.legs, targets, short: r.short, err: r.err };
+  };
+
+  // mốc hành động dày gấp đôi mốc `path`
+  const taus = [];
+  for (let i = 0; i <= 2 * nA; i++) taus.push((T1 * i) / (2 * nA));
+  for (let i = 1; i <= 2 * nB; i++) taus.push(T1 + (T2 * i) / (2 * nB));
+  // nhấc ít nhất ở từng mốc cho đế giày qua ngưỡng (hở thêm `2 · s` cho chỗ nội suy giữa hai mốc), không lún sàn, nền
+  const liftMax = LIFT_MAX * hs;
+  const moving = {
+    inner: (tau) => tau <= T1 && span01(tau / T1, SIT_PHASE.step) % 1 > 0,
+    outer: (tau) => tau > T1 && span01((tau - T1) / T2, SWING_PHASE.outer) % 1 > 0,
+  };
+  const liftFound = {};
+  const lifts = {};
+  for (const which of ["inner", "outer"]) {
+    const leg = which === "inner" ? innerLeg : outerLeg;
+    const need = taus.map((tau) => {
+      if (!moving[which](tau)) return 0;
+      for (let l = 0; l <= liftMax + 1e-9; l += 2 * hs) {
+        const r = solveAt(tau, { inner: 0, outer: 0, [which]: l });
+        if (soleOk(soleOf(r.sp, r.legs[leg], r.targets[leg]))) return l;
+      }
+      return Infinity;
+    });
+    liftFound[which] = need.every(Number.isFinite);
+    lifts[which] = liftProfile(
+      need.map((v) => (Number.isFinite(v) ? v : liftMax)),
+      LIFT_RATE * hs,
+      liftMax,
+    );
+  }
+  const plan = taus.map((tau, i) => solveAt(tau, { inner: lifts.inner[i], outer: lifts.outer[i] }));
+  const liftTop = { inner: Math.max(...lifts.inner), outer: Math.max(...lifts.outer) };
+
+  // thân cúi, đầu cúi né khung trên; cúi thêm cho đầu lọt dưới khung trên
+  const sitTorso = sitKey.pose.torso ?? 0;
+  const sitHead = sitKey.pose.head?.[2] ?? 0;
+  const upright = (tau) => (tau <= T1 ? 0 : window01((tau - T1) / T2, ...SWING_PHASE.upright));
+  const baseLean = (tau) =>
+    tau <= T1
+      ? BOARD_LEAN.peak * window01(tau / T1, ...SIT_PHASE.lean)
+      : BOARD_LEAN.peak + (sitTorso - BOARD_LEAN.peak) * upright(tau);
+  const pitchOf = (tau, lean) => {
+    const k = upright(tau);
+    return BOARD_LEAN.head * lean * (1 - k) + sitHead * k;
+  };
+  // độ cúi gần độ cúi nền nhất cho đầu lọt; cúi thêm có khi đưa đầu tới chỗ khung trên thấp (cột trước), nên thử cả hai
+  // phía; không độ nào lọt thì lấy độ hở nhất
+  const gapAt = (p, lean) => {
+    const g = headAt(p.sp, {
+      lr: p.legs.right,
+      ll: p.legs.left,
+      torso: lean,
+      head: [0, 0, pitchOf(p.tau, lean)],
+    });
+    return g === undefined ? Infinity : g;
+  };
+  for (const p of plan) {
+    const base = baseLean(p.tau);
+    p.lean = base;
+    if (p.tau <= 0 || p.tau >= T - 1e-9 || gapAt(p, base) >= HEAD_CLEAR * s) continue;
+    let best = { lean: base, gap: -Infinity, ok: false };
+    for (let d = 2; d <= BOARD_LEAN.max; d += 2)
+      for (const lean of [base + d, base - d]) {
+        if (lean < 0 || lean > BOARD_LEAN.max) continue;
+        const gap = gapAt(p, lean);
+        const ok = gap >= HEAD_CLEAR * s;
+        if ((ok && !best.ok) || (ok === best.ok && !ok && gap > best.gap)) best = { lean, gap, ok };
+      }
+    p.lean = best.lean;
+  }
+  // nắn: mỗi mốc không thấp hơn trung bình hai mốc kề cho thân không giật
+  for (let pass = 0; pass < 2; pass++)
+    for (let i = 1; i + 1 < plan.length; i++)
+      plan[i].lean = Math.max(plan[i].lean, Math.min(plan[i - 1].lean, plan[i + 1].lean));
+  plan[0].lean = 0;
+  plan[plan.length - 1].lean = sitTorso;
+  const leanTop = Math.max(...plan.map((p) => p.lean));
+
+  // tay: phía xe nắm mép khung trên, phía cửa tì đùi rồi tì mặt ngồi
+  const armOf = (k) => (k === "right" ? "armRight" : "armLeft");
+  const gripArm = armOf(innerLeg);
+  const restArm = armOf(outerLeg);
+  const uGrip = inL.u + ahead * DOOR_GRIP.offset[0] * s;
+  const rail = fr.world(
+    uGrip,
+    fr.headN + DOOR_GRIP.offset[1] * s,
+    fr.headY(uGrip) + DOOR_GRIP.offset[2] * s,
+  );
+  // nắm khung khi vai với tới suốt quãng nắm; không thì lòng tay đặt lên đùi cùng bên
+  const armLen = (rig.lengths(h).upperArm + rig.lengths(h).foreArm) * s;
+  const onRail = plan
+    .filter((p) => p.tau >= DOOR_GRIP.approach[1] * T1 - 1e-9 && p.tau <= DOOR_GRIP.release[0] * T1 + 1e-9)
+    .every((p) => {
+      const J = rig.actJoints(c, {
+        ...p.sp,
+        pose: { ...p.sp.pose, lr: p.legs.right, ll: p.legs.left, torso: p.lean },
+      });
+      return len(sub(J[gripArm === "armRight" ? "shoulderR" : "shoulderL"], rail)) <= DOOR_GRIP.reach * armLen;
+    });
+  const armStand = { armRight: STAND_ARMS, armLeft: STAND_ARMS };
+  // lòng tay lúc đứng buông tay: tay đi từ đó theo đường thẳng (đích thế giới), khỏi lật khuỷu khi hoà góc sang đích
+  const J0 = rig.actJoints(c, {
+    ...sp0,
+    pose: { ...sp0.pose, ar: STAND_ARMS, al: STAND_ARMS, lr: standL.right, ll: standL.left },
+  });
+  const palm0 = (arm) => {
+    const k = arm === "armRight" ? "R" : "L";
+    const d = sub(J0[`wrist${k}`], J0[`elbow${k}`]);
+    return add(J0[`wrist${k}`], mul(d, (50 * rig.HAND_BONES.palm.len * s) / len(d)));
+  };
+  const gripPalm0 = palm0(gripArm);
+  /** Chỗ lòng tay phía xe đặt trên đùi cùng bên khi đã buông khung (thế giới): giữa hông, gối, nhích lên mặt đùi */
+  const lapOf = (p) => {
+    const [L, R] = rig.legs3World(withLegs(p.sp, p.legs).pose, p.sp.world, h, body.hipHalf);
+    const g = innerLeg === "right" ? R : L;
+    return add(lerp3(g[0], g[1], LAP.along), [0, -LAP.up * s, 0]);
+  };
+  // tay phía cửa: chuỗi chỗ đặt (thế giới, đi theo thân), hoà chỗ trước sang chỗ sau quanh mỗi mốc giây trong `HAND_BLEND` s
+  const restSide = restArm === "armRight" ? "R" : "L";
+  const restPalm0 = palm0(restArm);
+  const markOf = (m) => (p) =>
+    rig.bodyMarkAt(c, { ...p.sp, pose: { ...p.sp.pose, lr: p.legs.right, ll: p.legs.left, torso: p.lean } }, m, restSide);
+  const restSeq = [
+    [0, () => restPalm0, null],
+    [HAND_BLEND, markOf(OUTER_HAND.side), null],
+    [OUTER_HAND.knee * T1, markOf(OUTER_HAND.thigh), null],
+    [OUTER_HAND.seat[0] * T1, markOf(SEAT_HAND), SEAT_HAND.elbow],
+    [T1 + OUTER_HAND.seat[1] * T2, markOf(OUTER_HAND.thigh), null],
+  ];
+  const restAt = (p) => {
+    let i = 0;
+    while (i + 1 < restSeq.length && p.tau >= restSeq[i + 1][0] + HAND_BLEND / 2) i++;
+    const [, f0, e0] = restSeq[i];
+    const next = restSeq[i + 1];
+    if (!next) return { at: f0(p), elbow: e0 };
+    const k = window01(p.tau, next[0] - HAND_BLEND / 2, next[0] + HAND_BLEND / 2);
+    return { at: k > 0 ? lerp3(f0(p), next[1](p), k) : f0(p), elbow: k < 0.5 ? e0 : next[2] };
+  };
+  const keyOf = (p, i) => {
+    const t = +((way === "in" ? p.tau : T - p.tau) / T).toFixed(4);
+    if (i === plan.length - 1) return { ...structuredClone(sitKey), t, ease: "linear" };
+    const stand = i === 0;
+    const v = p.tau / T1;
+    const w = (p.tau - T1) / T2;
+    const reach = {};
+    const hand = {};
+    if (!stand && onRail && v <= DOOR_GRIP.release[0]) {
+      const k = window01(v, ...DOOR_GRIP.approach);
+      reach[gripArm] = {
+        at: rig.worldToReach(p.sp.world, gripArm, lerp3(gripPalm0, rail, k), h).map(r1),
+        point: "grip",
+        ...(k >= DOOR_GRIP.elbowFrom && { elbow: DOOR_GRIP.elbow }),
+      };
+      hand[gripArm] = k >= DOOR_GRIP.elbowFrom ? { pose: "grip" } : { pose: "flat" };
+    } else if (!stand && onRail && (v <= 1 || w <= LAP_UNTIL)) {
+      // buông trước khi hông đáp, xuống đùi; khuỷu giữ hướng lúc nắm cho khỏi lật
+      const k = window01(v, ...DOOR_GRIP.release);
+      reach[gripArm] = {
+        at: rig.worldToReach(p.sp.world, gripArm, lerp3(rail, lapOf(p), k), h).map(r1),
+        point: "palm",
+        ...(v <= 1 && { elbow: DOOR_GRIP.elbow }),
+      };
+      hand[gripArm] = k < 0.5 ? { pose: "grip" } : { pose: "flat" };
+    } else if (!stand && (v <= 1 || w <= LAP_UNTIL)) {
+      const k = window01(v, ...LAP.approach);
+      reach[gripArm] = {
+        at: rig.worldToReach(p.sp.world, gripArm, lerp3(gripPalm0, lapOf(p), k), h).map(r1),
+        point: "palm",
+      };
+      hand[gripArm] = { pose: "flat" };
+    }
+    if (!stand && (v <= 1 || w <= LAP_UNTIL)) {
+      const r = restAt(p);
+      reach[restArm] = {
+        at: rig.worldToReach(p.sp.world, restArm, r.at, h).map(r1),
+        point: "palm",
+        ...(r.elbow && { elbow: r.elbow }),
+      };
+      hand[restArm] = { pose: "flat" };
+    }
+    return {
+      t,
+      pose: {
+        legLeft: p.legs.left,
+        legRight: p.legs.right,
+        torso: r1(p.lean),
+        head: [0, 0, r1(stand ? 0 : pitchOf(p.tau, p.lean))],
+        ...(stand && armStand),
+      },
+      ...(Object.keys(reach).length && { reach }),
+      ...(Object.keys(hand).length && { hand }),
+      ease: "linear",
+    };
+  };
+  let akeys = plan.map(keyOf).map((k, i) => {
+    if (i === 0 || plan[i].tau >= ARM_RAMP - 1e-9) return k;
+    const rest = { ...k };
+    delete rest.reach;
+    delete rest.hand;
+    return rest;
+  });
+  if (way === "out") akeys = akeys.reverse();
+  const note =
+    `${way === "in" ? "Vào" : "Ra khỏi"} chỗ ngồi qua ô cửa, sinh bằng \`stickman gen board\` cho cảnh \`${o.scene}\`, người \`${id}\` từ giây ${at}: ` +
+    (way === "in"
+      ? `đứng ngoài cạnh ô cửa nhìn dọc thân xe; chân ${legName[innerLeg]} (phía xe) bước qua ngưỡng vào hốc chân, cùng lúc thân cúi tới ${r1(leanTop)}°, hông hạ, dạt vào mặt ngồi, lưng chéo về ghế (${T1} s); ngồi rồi mới rút chân ${legName[outerLeg]} qua ngưỡng vào trong, quay về hướng ghế, trượt vào chỗ ngồi (${T2} s); hết thì nối \`${sitName}\`. `
+      : `từ dáng \`${sitName}\` quay ra phía cửa, chân ${legName[outerLeg]} (phía cửa) đưa ra trước qua ngưỡng đặt xuống nền (${T2} s); thân cúi tới ${r1(leanTop)}°, nhổm dậy, đứng lên ngoài xe, chân ${legName[innerLeg]} theo ra sau cùng (${T1} s); hết thì nối \`stand-3d\`. `) +
+    `Tay ${legName[innerLeg]} ${onRail ? "nắm mép khung trên" : "đặt lên đùi cùng bên (khung trên ngoài tầm với)"}, tay ${legName[outerLeg]} tì đùi rồi tì mặt ngồi. Ghi tay, chân, thân, đầu, bàn tay. Nền: \`world.path\` (mốc đứng ngoài ô cửa, mốc \`sit\` mỗi ${BOARD_STEP} s lái hông) và \`world.floor\` sàn trong do chính lệnh ghi vào cảnh ấy; chồng track một tay (cầm), nét mặt lên trên. ` +
+    `Ô cửa, ghế, sàn hay người đổi thì sinh lại, không sửa tay.`;
+  const action = rig.parseAction({
+    schemaVersion: rig.ACTION_VERSION,
+    name,
+    duration: r3(T),
+    end: "hold",
+    authoredAt: "side",
+    mask: ["armLeft", "armRight", "legLeft", "legRight", "torso", "head", "hand"],
+    keys: akeys,
+    events: [],
+    note,
+    preview: { stage: way === "in" ? "sit-down" : "stand-up" },
+  });
+  if (!action.success)
+    fail(
+      `hành động sinh ra không qua schema: ${action.error.issues?.[0]?.path?.join(".")}: ${action.error.issues?.[0]?.message}`,
+    );
+
+  // cảnh sau khi sinh, tự kiểm
+  const next = sceneWith(name, after);
+  const actionsA = {
+    ...data.actions,
+    [name]: action.data,
+    ...(way === "in" && { [sitName]: sitRes.action }),
+  };
+  let rtA;
+  try {
+    rtA = runtimeOf(parseOr(next, "sau khi sinh"), actionsA);
+  } catch (e) {
+    if (e instanceof GenError) throw e;
+    fail(`cảnh sau khi sinh không dựng được: ${e.message}`);
+  }
+  const times = sampleTimes(at + 1e-3, tEnd - 1e-3);
+  const core = [];
+  const row = (rule, level, worst, t, limit, msg) =>
+    core.push({ rule, level, worst: r2(worst), t: sec(t), limit, msg });
+  {
+    // bàn chân đứng yên: chân phía cửa suốt pha hạ, chân phía xe trước khi bước và khi đã đặt trong hốc chân
+    const sA = SIT_PHASE.step.map((x) => x * T1);
+    const plants = [
+      { leg: outerLeg, from: 0, to: T1, at: G.o0 },
+      { leg: innerLeg, from: 0, to: sA[0], at: G.i0 },
+      { leg: innerLeg, from: sA[1], to: T1 + SWING_PHASE.inner[0] * T2, at: G.i1 },
+    ];
+    let worst = { d: 0, t: at };
+    for (const t of times) {
+      const tau = way === "in" ? t - at : at + T - t;
+      const now = plants.filter((x) => tau >= x.from - 1e-9 && tau <= x.to + 1e-9);
+      if (!now.length) continue;
+      const J = rig.actJoints(c, spAt(rtA, t));
+      for (const x of now) {
+        const f = J[`foot${x.leg === "right" ? "R" : "L"}`];
+        const d = Math.hypot(f[0] - x.at[0], f[2] - x.at[2]);
+        if (d > worst.d) worst = { d, t };
+      }
+    }
+    row(
+      "plant",
+      worst.d > 4 * s ? "lỗi" : worst.d > 2 * s ? "cảnh báo" : "ok",
+      worst.d,
+      worst.t,
+      `≤ ${comma(2 * s)}`,
+      `bàn chân trên nền, sàn dời nhiều nhất ${comma(worst.d)} ở giây ${sec(worst.t)}`,
+    );
+  }
+  {
+    // đế giày: trên nền, sàn không lún; qua ngưỡng hở ít nhất SOLE_CLEAR
+    let worst = { gap: Infinity, t: at };
+    for (const t of times) {
+      const sp = spAt(rtA, t);
+      const J = rig.actJoints(c, sp);
+      const legs = { right: sp.pose.lr, left: sp.pose.ll };
+      for (const [k, tag] of [
+        ["right", "R"],
+        ["left", "L"],
+      ]) {
+        const g = soleOf(sp, legs[k], J[`foot${tag}`]);
+        if (g.gap < worst.gap) worst = { ...g, t };
+      }
+    }
+    const WORD = {
+      sill: "trên ngưỡng (trừ khe đòi)",
+      ground: "trên nền ngoài",
+      floor: "trên sàn trong",
+    };
+    row(
+      "sole",
+      worst.gap < -2 * s ? "lỗi" : worst.gap < -1 * s ? "cảnh báo" : "ok",
+      worst.gap,
+      worst.t,
+      `≥ ${comma(-1 * s)}`,
+      `đế giày hở ${WORD[worst.over] ?? ""} ít nhất ${comma(worst.gap)} ở giây ${sec(worst.t)}`,
+    );
+  }
+  {
+    let worst = { g: Infinity, t: at };
+    for (const t of times) {
+      const g = headAt(spAt(rtA, t), {});
+      if (g !== undefined && g < worst.g) worst = { g, t };
+    }
+    row(
+      "head",
+      worst.g < 0 ? "lỗi" : worst.g < HEAD_CLEAR * s ? "cảnh báo" : "ok",
+      Number.isFinite(worst.g) ? worst.g : 0,
+      worst.t,
+      `≥ ${comma(HEAD_CLEAR * s)}`,
+      Number.isFinite(worst.g)
+        ? `đỉnh đầu dưới khung trên ${doorName} ít nhất ${comma(worst.g)} ở giây ${sec(worst.t)}`
+        : "đầu không qua mặt khung trên",
+    );
+  }
+  {
+    const far = plan.reduce((a, b) => (b.short > a.short ? b : a));
+    const short = far.short;
+    const err = Math.max(...plan.map((x) => x.err));
+    row(
+      "legReach",
+      short > 2 * s ? "lỗi" : "ok",
+      short,
+      tOf(far.tau),
+      `≤ ${comma(2 * s)}`,
+      short > 2 * s
+        ? `cổ chân thiếu ${comma(short)} tới đích ở giây ${sec(tOf(far.tau))}`
+        : `cổ chân tới đích (lệch giải ${comma(err)})`,
+    );
+    const bad = plan.find((p) =>
+      ["right", "left"].some(
+        (k) =>
+          p.legs[k][1] > LEG_RANGE.knee[1] + 1 ||
+          p.legs[k][1] < LEG_RANGE.knee[0] ||
+          p.legs[k][0] > LEG_RANGE.thigh ||
+          p.legs[k][2] < LEG_RANGE.splay[0] ||
+          p.legs[k][2] > LEG_RANGE.splay[1],
+      ),
+    );
+    row(
+      "legRange",
+      bad ? "lỗi" : "ok",
+      0,
+      bad ? tOf(bad.tau) : at,
+      `đùi ≤ ${LEG_RANGE.thigh}°, gối ${LEG_RANGE.knee.join("…")}°, dang ${LEG_RANGE.splay.join("…")}°`,
+      bad
+        ? `góc chân ngoài tầm ở giây ${sec(tOf(bad.tau))}: phải [${bad.legs.right.join(", ")}], trái [${bad.legs.left.join(", ")}]`
+        : "góc chân trong tầm",
+    );
+  }
+  for (const which of ["inner", "outer"])
+    if (!liftFound[which])
+      row(
+        "sole",
+        "lỗi",
+        0,
+        at,
+        `nhấc ≤ ${comma(liftMax)}`,
+        `nhấc chân ${legName[which === "inner" ? innerLeg : outerLeg]} tới ${comma(liftMax)} vẫn chưa qua ngưỡng`,
+      );
+  for (const side of ["right", "left"])
+    core.push(
+      ...coreChecks(rtA, chars, { id, side, window: [at, tEnd] }).map((r) => ({
+        ...r,
+        msg: `tay ${side === "right" ? "phải" : "trái"}: ${r.msg}`,
+      })),
+    );
+  const holds = (rawM.world.hands ?? []).some((k) => k.right?.hold || k.left?.hold);
+  const world = await worldChecks({
+    dir: root,
+    before: parseOr(sceneBase, "nền"),
+    after: parseOr(next, "sau khi sinh"),
+    actions: actionsA,
+    groups: ["move", "clash", ...(holds ? ["held"] : [])],
+    ...(o.stage && { spec: o.stage.spec, held: o.stage.held }),
+  });
+  const ignore = footSink(id, s);
+  const failed = checkFailed(core, world, ignore);
+  const checks = checkRows(core, world, ignore);
+
+  // dòng in, ghi
+  const opt = (flag, val) =>
+    val === undefined || val === null || val === "" ? "" : ` --${flag} ${val}`;
+  const again =
+    `pnpm exec stickman gen board --scene ${o.scene} --cast ${id} --way ${way} --at ${at}` +
+    opt("door", o.door) +
+    opt("seat", o.seat) +
+    opt("ground", o.ground) +
+    opt("track", o.track) +
+    SIT_FLAGS.map((k) => opt(k, o[k])).join("") +
+    opt("name", o.name);
+  const lines = [
+    `board ${way}: cảnh ${o.scene}, ${id} từ giây ${at} tới ${r3(tEnd)}; ô cửa ${doorName}${fDoor ? " (cờ)" : ""}, mặt ngồi ${seatName}${fSeat ? " (cờ)" : ""}`,
+    `  chỗ đứng ${r1(Hs[0])},${r1(Hs[2])} (nền y ${comma(ground)}, yaw ${yawStand}) · chỗ đáp ${E.map(r1).join(",")} (yaw ${yawAt(BOARD_YAW.land)}) · chỗ ngồi ${sitIn.map(r1).join(",")} (yaw ${yawSeat}) · sàn trong y ${comma(fr.floor)}`,
+    `  chân ${legName[innerLeg]} (phía xe) ${way === "in" ? "bước vào trước" : "ra sau cùng"}, nhấc tới ${comma(liftTop.inner)}; chân ${legName[outerLeg]} (phía cửa) ${way === "in" ? "rút vào sau" : "ra trước"}, nhấc tới ${comma(liftTop.outer)}; thân cúi tới ${r1(leanTop)}°`,
+    `  path: ${keys.length} mốc (thay ${dropped.length}) · track \`${trackName}\`: ${name} ${at} → ${after.action} ${after.start}`,
+    ...[movedLine(doorT, "ô cửa"), movedLine(seatT, "mặt ngồi")]
+      .filter(Boolean)
+      .map((l) => `  ${l}`),
+    ...notes.map((n) => `  ${n}`),
+    ...(sitRes.ok
+      ? []
+      : [
+          `  cảnh báo: dáng ngồi \`${sitName}\` tự kiểm không đạt (gen sit) — xem \`gen sit --at ${way === "in" ? r3(tEnd) : at}\``,
+        ]),
+    "  tự kiểm:",
+    checkTable(core, world, ignore)
+      .split("\n")
+      .map((l) => `  ${l}`)
+      .join("\n"),
+    `  dải khung: pnpm exec stickman-render --scene ${relScene} --from ${at} --to ${r3(tEnd)} --every 0.1 --cols 9 --out tmp/board/${o.scene}-${id}.png`,
+    `  chạy lại: ${again}`,
+  ];
+  const hints = [];
+  const groups = new Set(world.rows.filter((r) => !ignore(r)).map((r) => r.group));
+  if (core.some((r) => r.rule === "head" && r.level === "lỗi"))
+    hints.push(
+      "đầu chạm khung trên: ghế lùi ra sau (chỗ rộng hơn ở ô cửa), hạ mặt ngồi, hay người thấp hơn",
+    );
+  if (core.some((r) => r.rule === "sole" && r.level === "lỗi"))
+    hints.push("chân vướng ngưỡng: điểm ngồi xa đầu ngưỡng hơn, ngưỡng thấp hơn");
+  if (groups.has("clash"))
+    hints.push(
+      "lồng vào đồ: dời ghế (lùi, tiến) hay đổi điểm ngồi dọc ngưỡng; đồ ngoài vai trò (vô lăng, táp-lô) không có trong phép tính",
+    );
+  let wrote = null;
+  const out = join(root, "actions", `${name}.json`);
+  if (failed && !o.force) {
+    lines.push(
+      `lỗi: tự kiểm không đạt — không ghi ${relScene}, actions/${name}.json (ghi kèm cảnh báo bằng --force${hints.map((x) => `; ${x}`).join("")})`,
+    );
+  } else if (o.dryRun || !sd.bytes) {
+    lines.push(
+      `chạy khô: không ghi ${relScene}, actions/${name}.json`,
+      `  path: ${JSON.stringify(keys)}`,
+    );
+  } else {
+    const text = sd.bytes.toString("utf8");
+    const bodyText = await formatLike(text, next, async (t) =>
+      prettier.format(t, {
+        ...(await prettier.resolveConfig(sd.file)),
+        filepath: sd.file,
+        parser: "json",
+      }),
+    );
+    if (existsSync(out) && !o.force && !(readJson(out).note ?? "").includes("`stickman gen board`"))
+      fail(
+        `actions/${name}.json đã có và không phải file \`stickman gen board\` sinh — đổi --name hay --force để đè`,
+      );
+    const now = readFileSync(sd.file);
+    if (sha(now) !== sd.hash)
+      throw new GenConflict(`${relScene} đổi trên đĩa trong lúc sinh — chạy lại`, sha(now));
+    writeWithBak(sd.file, bodyText, now);
+    wrote = { file: relScene, hash: sha(bodyText) };
+    mkdirSync(join(root, "actions"), { recursive: true });
+    writeFileSync(out, await pretty(action.data, out));
+    lines.push(
+      `${failed ? "cảnh báo: tự kiểm không đạt, --force nên vẫn ghi" : "đã ghi"} ${relScene} (bản cũ ${relScene}.bak), actions/${name}.json`,
+    );
+    if (way === "in")
+      await emit(
+        root,
+        "sit",
+        o,
+        join(root, "actions", `${sitName}.json`),
+        sitRes.action,
+        false,
+        lines,
+      );
+  }
+  return {
+    ok: !failed,
+    wrote,
+    file: `actions/${name}.json`,
+    name,
+    action: action.data,
+    scene: next,
+    path: keys,
+    clips: [{ action: name, start: at }, after],
+    track: trackName,
+    roles: {
+      door: {
+        name: doorE.prop.name,
+        entry: entryName(doorE.prop, door),
+        virtual: !!doorE.prop.virtual,
+      },
+      seat: {
+        name: seatE.prop.name,
+        entry: entryName(seatE.prop, seat),
+        virtual: !!seatE.prop.virtual,
+      },
+    },
+    core,
+    world,
+    checks,
+    ...(sd.hash && { hash: sd.hash }),
+    lines,
+    text: lines.join("\n"),
+  };
+}
+
 /** Tên vai trò cho dòng in */
 const ROLE_LABEL = {
   pourer: "bình rót",
@@ -3234,6 +4361,7 @@ const ROLE_LABEL = {
   backrest: "lưng ghế",
   footrest: "để chân",
   tabletop: "mặt bàn",
+  doorway: "ô cửa",
 };
 
 /**
@@ -3278,6 +4406,15 @@ export const GEN_KINDS = {
     roles: [],
     page: GEN_PAGES.walk,
   },
+  board: {
+    run: genBoard,
+    describe:
+      "vào, ra chỗ ngồi qua ô cửa: hạ hông xuống mép ghế, xoay người đưa chân qua ngưỡng; mốc `path` ghi vào cảnh, nối `gen sit` / `stand-3d`",
+    roles: [
+      { slot: "door", role: "doorway", need: "always", find: "doorBeside", flag: "door" },
+      { slot: "seat", role: "seat", need: "always", find: "boardSeat", flag: "seat" },
+    ],
+  },
 };
 
 /** Nghĩa của `find` cho bảng slot */
@@ -3286,6 +4423,9 @@ const FIND_LABEL = {
   sameAsSeat: "của cùng ghế (cùng chủ với mặt ngồi), đúng phía",
   ahead: "vật trước mặt trong tầm, gần nhất",
   heldRight: "món tay phải giải phẫu đang cầm, không thì --item (mặc định binh)",
+  doorBeside:
+    "ra: ô cửa có mặt ngồi ở phía trong, trong chiều dài ngưỡng, gần nhất; vào: ô cửa có người ở phía ngoài, gần nhất",
+  boardSeat: "ra: mặt ngồi dưới hông; vào: mặt ngồi phía trong ô cửa, mép gần ngưỡng nhất",
   flag: "chỉ theo cờ",
 };
 /** Cờ của slot nhận gì */
@@ -3296,6 +4436,8 @@ const FLAG_VALUE = {
   armrest: "<vật | x,y,z>",
   table: "<vật | vật#mục | y | y,mép gần | none>",
   footrest: "<vật | vật#mục | y | none>",
+  door: "<vật | vật#mục | x,z,y ngưỡng,y khung trên>",
+  seat: "<vật | vật#mục>",
 };
 
 /** Bảng slot của kiểu `kind` (dòng chữ cho `stickman gen <kiểu> --help` và tool `gen` của MCP) */

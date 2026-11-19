@@ -24,6 +24,7 @@ import {
   pourHold,
   pourerOf,
 } from "./gen-pour.mjs";
+import { doorFrame, legAngles, liftProfile, stepBump, stepFoot, STEP, yawOfDir } from "./gen-board.mjs";
 import { sitCellText, sitSheetCells } from "./gen-sheet.mjs";
 import {
   ARMREST,
@@ -42,6 +43,7 @@ import {
 import {
   GEN_KINDS,
   GenError,
+  genBoard,
   genPour,
   genSit,
   SIT_SELF_PIERCE,
@@ -1132,5 +1134,208 @@ describe("stickman gen sit --sheet", () => {
     await assert.rejects(sitSheetCells({ depth: "a" }), /--depth nhận/);
     await assert.rejects(sitSheetCells({ feet: "air" }), /`feet` \(Bàn chân\) nhận free \| floor/);
     await assert.rejects(sitSheetCells({ character: "khong-co" }), /không có nhân vật/);
+  });
+});
+
+describe("gen-board", () => {
+  const door = {
+    sill: { from: [0, -40, 100], to: [0, -40, -100], width: 20 },
+    head: [
+      [0, -300, 80],
+      [0, -340, 0],
+      [0, -340, -100],
+    ],
+    out: [1, 0, 0],
+    floor: -10,
+    ground: 0,
+  };
+  it("khung ô cửa: local ↔ world, khung trên nội suy theo đường gấp khúc, ngoài đầu lấy đầu gần nhất", () => {
+    const fr = doorFrame(door);
+    assert.deepEqual(fr.O, [0, -40, 0]);
+    assert.equal(fr.half, 100);
+    const p = fr.world(30, 12, -55);
+    const q = fr.local(p);
+    assert.ok(Math.abs(q.u - 30) < 1e-9 && Math.abs(q.n - 12) < 1e-9 && q.y === -55);
+    // `A` từ `from` tới `to`: u tăng về −z
+    assert.ok(Math.abs(fr.headY(-80) + 300) < 1e-9);
+    assert.ok(Math.abs(fr.headY(-40) + 320) < 1e-9);
+    assert.ok(Math.abs(fr.headY(50) + 340) < 1e-9);
+    assert.ok(Math.abs(fr.headY(-500) + 300) < 1e-9);
+    assert.equal(fr.sillY(0), -40);
+  });
+  it("góc chân: cổ chân giải lại bằng chain2 trúng đích, có dang; ngoài tầm thì báo phần thiếu", () => {
+    const l1 = 80;
+    const l2 = 95;
+    const D = Math.PI / 180;
+    for (const target of [
+      [40, 120, 21],
+      [90, 60, 40],
+      [-10, 150, 10],
+    ]) {
+      const { leg, reach } = legAngles(target, 21, l1, l2);
+      assert.equal(reach, 0);
+      const [a, k, d] = leg.map((v) => v * D);
+      const f = l1 * Math.sin(a) + l2 * Math.sin(a + k);
+      const down = l1 * Math.cos(a) + l2 * Math.cos(a + k);
+      const back = [f, down * Math.cos(d), 21 + down * Math.sin(d)];
+      for (let i = 0; i < 3; i++)
+        assert.ok(Math.abs(back[i] - target[i]) < 0.5, `${target} → ${leg}`);
+    }
+    assert.ok(legAngles([0, 400, 21], 21, l1, l2).reach > 200);
+  });
+  it("bước chân: đầu, cuối đúng chỗ, nhấc giữa bước; hướng `yawOfDir` ngược `dirOf`", () => {
+    const a = [30, 0, 20];
+    const b = [60, -50, -40];
+    assert.deepEqual(stepFoot(a, b, 0, 40), a);
+    assert.deepEqual(
+      stepFoot(b, b, 1, 40).map((v) => Math.round(v * 1e6) / 1e6),
+      b,
+    );
+    assert.deepEqual(
+      stepFoot(a, b, 1, 40).map((v) => Math.round(v * 1e6) / 1e6),
+      b,
+    );
+    const k = (STEP.lift[0] + STEP.lift[1]) / 2;
+    assert.equal(stepBump(k), 1);
+    assert.ok(Math.abs(stepFoot(a, b, k, 0)[1] - stepFoot(a, b, k, 40)[1] - 40) < 1e-9);
+    assert.equal(yawOfDir([1, 0, 0]), 0);
+    assert.equal(yawOfDir([0, 0, 1]), 270);
+    assert.equal(yawOfDir([0, 0, -1]), 90);
+  });
+  it("mức nhấc: không dưới mức cần, dốc có trần, một đỉnh", () => {
+    const need = [0, 0, 30, 0, 50, 0, 0, 0];
+    const got = liftProfile(need, 10, 45);
+    got.forEach((v, i) => assert.ok(v >= Math.min(need[i], 45) - 1e-9));
+    assert.ok(Math.max(...got) <= 45);
+    const peak = got.indexOf(Math.max(...got));
+    for (let i = 1; i < got.length; i++)
+      assert.ok(i <= peak ? got[i] >= got[i - 1] : got[i] <= got[i - 1], `${got}`);
+  });
+  it("slot của `board`: ô cửa và mặt ngồi luôn cần", () => {
+    assert.deepEqual(
+      GEN_KINDS.board.roles.map((k) => [k.slot, k.role, k.need, k.flag]),
+      [
+        ["door", "doorway", "always", "door"],
+        ["seat", "seat", "always", "seat"],
+      ],
+    );
+  });
+});
+
+// Ghế trần (chỉ mặt ngồi, mép trước sau gối như ghế xe) quanh người ngồi ở gốc mặt về −z, ô cửa bên phải người (−z của
+// khung món): ngưỡng thấp, khung trên cao, sàn trong và nền ngoài cùng y 0 thế giới (y `S` của khung món)
+const BOARD_WORLD = (headY = -260) => `
+import { addItem, Batch, box, buildWorld, plainRoom } from "@stickman3d/rig";
+const T = { top: "#ccc", lit: "#ddd", side: "#bbb" };
+const S = ${SEAT};
+export function worldOf(name: string, ctx: any) {
+  if (name !== "ngoi") return null;
+  const at = { at: [0, -S, 0] as [number, number, number], yaw: Math.PI / 2 };
+  const b = new Batch();
+  addItem(b, {
+    name: "ghe", touch: ["thigh", "torso", { part: "hand", max: 4 }], at,
+    parts: [{ v: box(-48, 50, 0, 6, -48, 48), tone: T }],
+    roles: [{ role: "seat", at: [1, 0, 0], size: [98, 96] }],
+  });
+  addItem(b, {
+    name: "khung", at,
+    parts: [
+      { v: box(-160, 160, S - 24, S, -72, -58), tone: T },
+      { v: box(-160, 160, ${headY - 6}, ${headY}, -72, -58), tone: T },
+    ],
+    roles: [{
+      role: "doorway", sill: { from: [-160, S - 24, -65], to: [160, S - 24, -65], width: 14 },
+      head: [[-160, ${headY}, -65], [160, ${headY}, -65]], out: [0, 0, -1], floor: S, ground: S,
+    }],
+  });
+  return buildWorld(ctx.scene, ctx.runtime, { set: () => { const s = plainRoom(); s.group.add(b.build()); return s; } }, ctx);
+}
+`;
+
+describe("stickman gen board trên cảnh three", () => {
+  it("ra: ô cửa, mặt ngồi tự tìm; chân qua ngưỡng, đầu dưới khung trên, bàn chân đứng yên; chạy khô không ghi", async () => {
+    const dir = worldSpace(BOARD_WORLD());
+    const r = await genBoard({ dir, scene: "ngoi", cast: "a", way: "out", at: AT, dryRun: true });
+    assert.equal(r.roles.door.entry, "khung", r.text);
+    assert.equal(r.roles.seat.entry, "ghe", r.text);
+    for (const rule of ["plant", "sole", "head", "legReach", "legRange"])
+      for (const x of byRule(r, rule)) assert.equal(x.level, "ok", `${rule}: ${r.text}`);
+    assert.equal(r.ok, true, r.text);
+    assert.equal(r.wrote, null);
+    assert.equal(r.clips.at(-1).action, "stand-3d");
+    const keys = r.path;
+    assert.equal(keys[0].sit, true);
+    assert.equal(keys.at(-1).sit, undefined);
+    assert.equal(r.action.preview.stage, "stand-up");
+    assert.equal(existsSync(join(dir, "actions", "board-out-ngoi-a-3d.json")), false);
+  });
+  it("ô cửa ảo `--door x,z,y ngưỡng,y khung` dọc mặt ngồi dưới hông: đi chung đường với ô cửa thật", async () => {
+    const dir = worldSpace(BOARD_WORLD());
+    const r = await genBoard({
+      dir,
+      scene: "ngoi",
+      cast: "a",
+      way: "out",
+      at: AT,
+      dryRun: true,
+      door: `-65,0,-24,${-260 - SEAT}`,
+    });
+    assert.equal(r.roles.door.virtual, true, r.text);
+    assert.equal(r.roles.seat.entry, "ghe", r.text);
+    assert.equal(r.ok, true, r.text);
+  });
+  it("vào: người không đứng đúng chỗ thì lỗi kèm lệnh `gen walk`, đứng đúng chỗ ấy thì vào được; người đang ngồi thì lỗi", async () => {
+    const src = BOARD_WORLD();
+    const stand = sitScene(SEAT, { at: [-300, 0, 0], sit: undefined, yaw: 0 });
+    stand.cast[0].tracks[0].clips = [{ action: "stand-3d", start: 0 }];
+    const dir = worldSpace(src, stand);
+    await assert.rejects(
+      genBoard({ dir, scene: "ngoi", cast: "a", way: "in", at: AT, dryRun: true }),
+      /cần đứng ở -?[\d.]+,-?[\d.]+ hướng \d+(\.\d)?° \(dọc thân xe về phía ghế nhìn, quay ra phía cửa \d+°\) — đưa người tới bằng `gen walk --to "-?[\d.]+,-?[\d.]+!\d+(\.\d)?"`/,
+    );
+    // đứng đúng chỗ lệnh chỉ: vào được, nối dáng `gen sit` của chỗ ngồi cuối
+    const err = await genBoard({
+      dir,
+      scene: "ngoi",
+      cast: "a",
+      way: "in",
+      at: AT,
+      dryRun: true,
+    }).catch((e) => e);
+    const [, x, z, yaw] = err.message.match(/--to "(-?[\d.]+),(-?[\d.]+)!(\d+(?:\.\d)?)"/);
+    stand.cast[0].world = { at: [+x, 0, +z], yaw: +yaw, floor: 0 };
+    const ok = await genBoard({
+      dir: worldSpace(src, stand),
+      scene: "ngoi",
+      cast: "a",
+      way: "in",
+      at: AT,
+      dryRun: true,
+    });
+    assert.equal(ok.ok, true, ok.text);
+    assert.equal(ok.path[0].sit, undefined);
+    assert.equal(ok.path.at(-1).sit, true);
+    assert.deepEqual(
+      ok.clips.map((k) => k.action),
+      ["board-in-ngoi-a-3d", "sit-ngoi-a-3d"],
+    );
+    assert.equal(ok.action.preview.stage, "sit-down");
+    const seated = worldSpace(src);
+    await assert.rejects(
+      genBoard({ dir: seated, scene: "ngoi", cast: "a", way: "in", at: AT }),
+      /đang ngồi ở giây 1 — gen board --way in cần người đứng ngoài ô cửa/,
+    );
+  });
+  it("cờ: --way sai, --door none, --seat số, --door số sai thì lỗi; cảnh không có ô cửa thì lỗi kèm cờ", async () => {
+    const dir = worldSpace(SIT_WORLD);
+    const o = { dir, scene: "ngoi", cast: "a", at: AT, dryRun: true };
+    await assert.rejects(genBoard({ ...o, way: "up" }), /--way nhận in \| out/);
+    await assert.rejects(genBoard({ ...o, way: "out", door: "none" }), /không nhận `none`/);
+    await assert.rejects(genBoard({ ...o, way: "out", seat: "1,2" }), /--seat nhận tên vật/);
+    await assert.rejects(
+      genBoard({ ...o, way: "out", door: "0,-80,-30" }),
+      /--door nhận <vật \| vật#mục \| x,z,y ngưỡng,y khung trên>/,
+    );
+    await assert.rejects(genBoard({ ...o, way: "out" }), /không thấy ô cửa cạnh mặt ngồi/);
   });
 });

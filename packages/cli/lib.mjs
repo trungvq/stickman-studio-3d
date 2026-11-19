@@ -2411,7 +2411,7 @@ export const CLI_FLAGS = {
       ...["legs", "tuck", "feet", "back", "hands", "elbow", "top"],
       ...["table", "armrest", "backrest", "footrest"],
       ...["to", "speed", "action", "start", "radius", "turn-time", "turn-side", "hold", "track"],
-      ...["after", "blend"],
+      ...["after", "blend", "way", "door", "ground"],
       ...[
         "seat",
         "depth",
