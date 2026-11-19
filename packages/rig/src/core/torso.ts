@@ -23,6 +23,7 @@ export type Dims = Required<
     | "bust"
     | "neckline"
     | "marks"
+    | "hemBand"
     | "panels"
     | "inner"
     | "open"
@@ -519,6 +520,9 @@ const ticks = (
     graze: 0.3,
   }));
 
+/** Bo gấu: vòng nét ở `y` cộng vạch gân; `garment.hemBand: false` bỏ cả hai */
+const hemBand = (s: Surface, marks: Mark[]): Mark[] => (s.g.hemBand === false ? [] : marks);
+
 /** Độ cao dọc nẹp áo, từ đáy cổ giữa ngực (`0`) tới gấu (`1`) */
 const placket = (s: Surface, us: number[]) => {
   const yA = s.top() + s.g.neckFront;
@@ -840,7 +844,8 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
       lean: 0,
       ticks: { step: 15, k: 0.56 },
     },
-    marks: (s) => [around(s.yH - 13, TRIM), ...ticks(s.yH - 12, s.yH - 1, 12, TRIM_FINE)],
+    marks: (s) =>
+      hemBand(s, [around(s.yH - 13, TRIM), ...ticks(s.yH - 12, s.yH - 1, 12, TRIM_FINE)]),
   },
   suit: {
     label: "Vest dựng khối",
@@ -925,7 +930,7 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
           pts: [s.at(d * 14, yP), s.at(d * 21, yP + 14), s.at(d * 30, yB - 2)],
           k: 0.67,
         })),
-        around(yB, { k: 1 }),
+        ...hemBand(s, [around(yB, { k: 1 })]),
         ...SIDES.flatMap((d): Mark[] => [
           { pts: [s.at(d * 10, top + 13), s.at(d * 10, top + 42)], k: 0.67 },
           {
@@ -988,8 +993,7 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
       ...innerMarks(s, "accent"),
       { pts: [s.at(-3, s.top() + s.g.neckFront), s.at(-3, s.yH - 2)], ...TRIM },
       ...placket(s, [0.2, 0.5, 0.8]).map((y) => ({ pts: [s.at(3, y)], dot: true, k: 0.85 })),
-      around(s.yH - 9, TRIM),
-      ...ticks(s.yH - 8, s.yH - 2, 22, TRIM_FINE),
+      ...hemBand(s, [around(s.yH - 9, TRIM), ...ticks(s.yH - 8, s.yH - 2, 22, TRIM_FINE)]),
     ],
   },
   jumper: {
@@ -1008,8 +1012,7 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
         { pts: [s.at(0, yA), s.at(0, s.yH - 1)], ...ZIP.line },
         // túi chéo hai bên dưới ngực
         ...SIDES.map((d) => ({ pts: [s.at(d * 21, s.t(0.52)), s.at(d * 30, s.t(0.78))], ...TRIM })),
-        around(yB, TRIM),
-        ...ticks(yB + 1, s.yH - 2, 12, TRIM_FINE),
+        ...hemBand(s, [around(yB, TRIM), ...ticks(yB + 1, s.yH - 2, 12, TRIM_FINE)]),
         { pts: pill(ZIP.half, yA - 1, yA - 1 + ZIP.slider), fill: "line", k: 0, lift: ZIP.lift },
         {
           pts: pill(ZIP.tabHalf, yA + ZIP.slider - 2, yA + ZIP.slider - 2 + ZIP.tab),

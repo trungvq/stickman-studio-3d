@@ -615,6 +615,8 @@ export const GarmentSchema = z.object({
   neckline: z.enum(["round", "v", "square"]).optional(),
   /** `false` bỏ đặc điểm dán của kiểu (nét, chấm, mảng); cổ bẻ, viền gân, mũ trùm, cổ chéo vẫn dựng */
   marks: z.boolean().optional(),
+  /** `false` bỏ bo gấu của `sweater`, `hoodie`, `cardigan`, `jumper` (vòng nét quanh gấu và vạch gân); kiểu khác bỏ qua. docs/12-trang-phuc-3d.md#thân-áo-dựng-khối */
+  hemBand: z.boolean().optional(),
   /** Mảng màu kín, hoạ tiết, chỗ khoét lộ da (`fill: "skin"`); chỉ người 3D. docs/12-trang-phuc-3d.md#mảng-áo-và-hoạ-tiết */
   panels: z.array(PanelSchema).optional(),
   /** Áo trong và cà vạt ở miệng cổ chữ V của `blazer`, `cardigan`, `jumper`, `suit`; áo phanh vạt (`open`) thì cả khe giữa hai vạt */

@@ -703,7 +703,9 @@ Trường bỏ trống lấy số của kiểu ở bảng `GARMENT_STYLES`; `gar
 ([bụng phệ](#bụng-phệ)) và `bust` ([ngực nở](#ngực-nở)) không thuộc bảng kiểu: bỏ trống là `0` ở mọi kiểu. `neckline`, `marks`
 ([dáng cổ và đặc điểm của kiểu](#dáng-cổ-và-đặc-điểm-của-kiểu)), `panels` ([mảng áo và hoạ tiết](#mảng-áo-và-hoạ-tiết)) và
 `inner` ([áo trong và cà vạt](#áo-trong-và-cà-vạt)), `open` ([áo khoác phanh vạt](#áo-khoác-phanh-vạt)), `bib` ([yếm](#yếm)),
-`lapel` ([áo khoác cổ V theo vai](#áo-khoác-cổ-v-theo-vai)) cũng không thuộc bảng kiểu.
+`lapel` ([áo khoác cổ V theo vai](#áo-khoác-cổ-v-theo-vai)) cũng không thuộc bảng kiểu. `hemBand: false` bỏ bo gấu (vòng nét
+quanh gấu và vạch gân) của `sweater`, `hoodie`, `cardigan`, `jumper`, giữ mọi đặc điểm khác; số đo không đổi, nên gấu thu về
+hông của `jumper` (`fit` `0.6`) muốn suông như sơ mi thì khai thêm `fit`, `hem`. Kiểu khác bỏ qua.
 Kiểu mang cả những đặc điểm không có số, đặt theo số đo đã đủ nên đè `neck`, `hem`… thì
 chúng đi theo:
 
@@ -1338,7 +1340,7 @@ khoá dừng hai vạt mở chữ V lộ áo trong, lá cổ áo khoác bẻ n�
   neckFront)`, khấc vào `(0.55 · lapel, 5 + 0.4 · neckFront)` rồi thẳng về đáy chữ V — đoạn dưới khấc là ve hẹp của hai vạt
   mở. Mũi cổ hạ theo `neckFront`, nên khoá kéo kín thì lá cổ thành cổ bẻ quanh cổ. `lapel` (mặc định `20`, px ở vai chuẩn)
   là nửa rộng mũi cổ; `collarUp` dựng lá cổ như mọi cổ bẻ.
-- **Bo gấu** `11` px: vòng quanh khối và vạch gân mỗi `12` độ. Hai **túi chéo** dưới ngực từ `x = 21` (`0.52` thân từ vành
+- **Bo gấu** `11` px: vòng quanh khối và vạch gân mỗi `12` độ; `hemBand: false` bỏ nó, khoá kéo vẫn chạy tới gấu. Hai **túi chéo** dưới ngực từ `x = 21` (`0.52` thân từ vành
   vai) xuống `x = 30` (`0.78`).
 
 | Số khác áo phông | Ghi chú |

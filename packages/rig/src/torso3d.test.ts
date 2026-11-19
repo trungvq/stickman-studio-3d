@@ -606,6 +606,17 @@ describe('áo jumper khoá kéo cổ bẻ', () => {
     // bo gấu: vòng quanh khối và vạch gân, kể cả sau lưng
     expect(t.fills.some((f) => f.ink !== undefined && f.pts.some((p) => p[2] < -10) && Math.min(...ys(f.pts)) > t.profile[t.profile.length - 1][1] - 14)).toBe(true);
   });
+
+  it('`hemBand: false` bỏ bo gấu của sweater, hoodie, cardigan, jumper; khoá kéo vẫn tới gấu', () => {
+    const band = (m: TorsoMesh) => [...m.fills, ...m.lines].filter((f) => f.pts.some((p) => p[2] < -10) && Math.min(...ys(f.pts)) > m.profile[m.profile.length - 1][1] - 14);
+    for (const style of ['sweater', 'hoodie', 'cardigan', 'jumper'] as const) {
+      const on = torsoMesh(GarmentSchema.parse({ style }), rig);
+      const off = torsoMesh(GarmentSchema.parse({ style, hemBand: false }), rig);
+      expect(band(off).length, style).toBeLessThan(band(on).length);
+      expect(band(off), style).toHaveLength(0);
+    }
+    expect(Math.max(...ys(zip(mesh({ hemBand: false }))))).toBeGreaterThan(mesh().profile[mesh().profile.length - 1][1] - 3);
+  });
 });
 
 describe('áo khoác phanh vạt', () => {
