@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 21,
+  "schemaVersion": 22,
   "name": "phone-use-high-left-3d",
   "duration": 1.4,
   "end": "wrap",
@@ -13,7 +13,7 @@
         "armLeft": { "at": [100, -120, 16], "point": "grip", "elbow": [-0.6, 1, 0.4] },
         "armRight": {
           "to": "otherGrip",
-          "offset": [4, -17, 2],
+          "offset": [-2.9, -4.6, 4.5],
           "point": "tip",
           "elbow": [-0.3, 0.7, 1]
         }
@@ -31,7 +31,7 @@
         "armLeft": { "at": [100, -120, 16], "point": "grip", "elbow": [-0.6, 1, 0.4] },
         "armRight": {
           "to": "otherGrip",
-          "offset": [4, -14, 2],
+          "offset": [-0.8, -3.1, 3.6],
           "point": "tip",
           "elbow": [-0.3, 0.7, 1]
         }
@@ -49,7 +49,7 @@
         "armLeft": { "at": [100, -120, 16], "point": "grip", "elbow": [-0.6, 1, 0.4] },
         "armRight": {
           "to": "otherGrip",
-          "offset": [4, -17, 2],
+          "offset": [-2.9, -4.6, 4.5],
           "point": "tip",
           "elbow": [-0.3, 0.7, 1]
         }
@@ -67,7 +67,7 @@
         "armLeft": { "at": [100, -120, 16], "point": "grip", "elbow": [-0.6, 1, 0.4] },
         "armRight": {
           "to": "otherGrip",
-          "offset": [4, -14, 2],
+          "offset": [-0.8, -3.1, 3.6],
           "point": "tip",
           "elbow": [-0.3, 0.7, 1]
         }
@@ -85,7 +85,7 @@
         "armLeft": { "at": [100, -120, 16], "point": "grip", "elbow": [-0.6, 1, 0.4] },
         "armRight": {
           "to": "otherGrip",
-          "offset": [4, -17, 2],
+          "offset": [-2.9, -4.6, 4.5],
           "point": "tip",
           "elbow": [-0.3, 0.7, 1]
         }
@@ -103,7 +103,7 @@
         "armLeft": { "at": [100, -120, 16], "point": "grip", "elbow": [-0.6, 1, 0.4] },
         "armRight": {
           "to": "otherGrip",
-          "offset": [4, -17, 2],
+          "offset": [-2.9, -4.6, 4.5],
           "point": "tip",
           "elbow": [-0.3, 0.7, 1]
         }
@@ -121,7 +121,7 @@
         "armLeft": { "at": [100, -120, 16], "point": "grip", "elbow": [-0.6, 1, 0.4] },
         "armRight": {
           "to": "otherGrip",
-          "offset": [4, -14, 2],
+          "offset": [-0.8, -3.1, 3.6],
           "point": "tip",
           "elbow": [-0.3, 0.7, 1]
         }
@@ -139,7 +139,7 @@
         "armLeft": { "at": [100, -120, 16], "point": "grip", "elbow": [-0.6, 1, 0.4] },
         "armRight": {
           "to": "otherGrip",
-          "offset": [4, -17, 2],
+          "offset": [-2.9, -4.6, 4.5],
           "point": "tip",
           "elbow": [-0.3, 0.7, 1]
         }
@@ -152,7 +152,7 @@
     }
   ],
   "events": [],
-  "note": "Cầm điện thoại xem và gõ, giơ cao ngang ngực trên, tay trái cầm máy: tâm nắm tay cầm ở hệ thân [100, -120, 16], tay kia giơ ngón trỏ trên màn (mốc `otherGrip`) và gõ ba cú mỗi lượt 1,4 s, lặp. Ghi hai tay, `hand`. Nền `stand-3d` hay `sit-3d`; món ở `world.hands[].hold` của tay cầm, như `dien-thoai@palmBox` với `roll` đầu máy ra trước. Chồng `look-down-*` cho đầu cúi nhìn máy; cùng họ: `phone-use-3d`, `-left`, `-high`, `-high-left`. Sinh bằng `tools/actions/phone-use.mjs`.",
+  "note": "Cầm điện thoại xem và gõ, giơ cao ngang ngực trên, tay trái cầm máy: tâm nắm tay cầm ở hệ thân [100, -120, 16], tay kia gõ màn bằng lòng đầu ngón trỏ (mốc `otherGrip`, `point: \"tip\"`, lòng tay úp) ba cú mỗi lượt 1,4 s, lặp. Ghi hai tay, `hand`. Nền `stand-3d` hay `sit-3d`; món ở `world.hands[].hold` của tay cầm, như `dien-thoai@palmBox` với `roll` đầu máy ra trước. Chồng `look-down-*` cho đầu cúi nhìn máy; cùng họ: `phone-use-3d`, `-left`, `-high`, `-high-left`. Sinh bằng `tools/actions/phone-use.mjs`.",
   "preview": {
     "stage": "stand",
     "hold": {

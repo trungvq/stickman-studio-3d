@@ -84,3 +84,31 @@ describe("actPalms: hướng lòng bàn tay người 3D", () => {
     });
   }
 });
+
+describe("tay gõ bằng đầu ngón ở `world.hands`", () => {
+  const tapAt = (hand: object, t = 1) => {
+    const r = parseScene({
+      duration: 2,
+      lens: { eye: [0, -300, -900], yaw: 0, pitch: 10, f: 800, cx: 0, cy: 0 },
+      cast: [
+        {
+          id: "a",
+          world: { at: [0, 0, 0], yaw: 30, hands: [{ t: 0, right: hand }] },
+          tracks: [{ clips: [{ action: "stand-3d", start: 0 }] }],
+        },
+      ],
+    });
+    if (!r.success) throw new Error(r.error.message);
+    const rt = resolveScene(r.data, { "stand-3d": STAND });
+    return actPalms(clad, sceneAt(rt, "a", t, clad.rig.height, body3(clad)))!.R;
+  };
+  const target = { to: "belly", offset: [40, -20, -10], point: "tip" };
+  it("dáng ngón trỏ dẫn, không khai `palm`: lòng tay úp, lòng đầu ngón ấn xuống", () => {
+    expect(palmFace(tapAt({ ...target, pose: "point" })).down).toBeLessThan(20);
+  });
+  it("khai `palm` thì theo khai; dáng các ngón cùng gập thì không đổi", () => {
+    expect(palmFace(tapAt({ ...target, pose: "point", palm: "in" })).down).toBeGreaterThan(60);
+    const fist = palmFace(tapAt({ ...target, pose: "fist" })).down;
+    expect(fist).toBeGreaterThan(30);
+  });
+});

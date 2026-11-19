@@ -587,6 +587,11 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
   điểm ấy của bàn tay vào `at` — tay lên tay vịn, mặt bàn thì `point: "palm"` ở mặt trên. `to` / `side` / `offset` thay `at`
   bằng mốc thân của chính người ấy ([01](01-rig.md#đích-theo-mốc)). `palm`, `fingers`, `bend` khai lòng tay theo ý định
   ([01](01-rig.md#hướng-lòng-tay-theo-ý)), đè bàn tay của hành động theo phần đích; mốc không khai giữ bàn tay của hành động.
+- **Gõ, bấm bằng đầu ngón**: `point: "tip"` với dáng ngón trỏ dẫn (`point`, `tap`, `pinch` — `tip` khi ấy là đầu ngón trỏ,
+  [01](01-rig.md#đích-theo-mốc)) mà không khai `palm` / `fingers` thì lòng tay úp (`palm: "down"`): lòng đầu ngón ấn xuống
+  mặt bấm, không chạm bằng cạnh ngón. Mặt bấm dựng đứng hay quay hướng khác thì khai `palm` quay về phía mặt ấy. Đích là
+  mặt màn: chỗ đầu ngón chạm (trục đốt) cách mặt màn đúng bán kính ngón, nhấc lên giữa hai cú cỡ `2,5`–`3` dọc pháp tuyến
+  của màn, không dọc trục đứng của thân.
 - **`pose`** đặt dáng ngón: tên dáng có sẵn (`HAND_POSES`, [01](01-rig.md#bàn-tay)) hay tên file `hands/<tên>.json` của
   thư viện ([01](01-rig.md#dáng-tay-có-tên)); `w` (`0..1`, bỏ trống là `1`) hoà từ dáng nghỉ. Dáng mốc đè ngón của hành
   động, giữ xoay và gập cổ tay của nó (hay của lòng tay theo ý định). Mỗi tay hoà ngón giữa hai mốc kề có nhắc tay ấy,

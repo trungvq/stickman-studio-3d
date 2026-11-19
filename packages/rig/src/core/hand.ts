@@ -365,8 +365,30 @@ export const gripShift = (pose: HandPose, side: number, k = 1, long = k): V3 => 
 };
 
 /**
+ * Đầu ngón trỏ chìa xa hơn đầu ngón giữa (dọc bàn tay, three ở cỡ dọc `1`) từ số đầu thì `tip` bắt đầu dời sang đầu ngón
+ * trỏ, tới số sau thì dời hẳn: `point`, `pinch`, `tap` dời hẳn; dáng nghỉ và dáng các ngón cùng gập thì không
+ */
+export const TIP_LEAD = [0.012, 0.04] as const;
+
+const boneEnd = (f: HandFrame): V3 => add3(f.o, matVec(f.R, [0, -f.len, 0]));
+const leadOf = (m: V3, n: V3, long: number): number => {
+  const u = Math.min(
+    1,
+    Math.max(0, ((m[1] - n[1]) / long - TIP_LEAD[0]) / (TIP_LEAD[1] - TIP_LEAD[0])),
+  );
+  return u * u * (3 - 2 * u);
+};
+
+/** Phần `tip` đã dời sang đầu ngón trỏ ở góc ngón `v` (`HAND_DOF`): `0` đầu ngón giữa, `1` đầu ngón trỏ (`TIP_LEAD`) */
+export function tipLead(v: HandVec): number {
+  const F = handFrames(v, -1);
+  return leadOf(boneEnd(F.middle1), boneEnd(F.index1), 1);
+}
+
+/**
  * Điểm `point` của bàn tay bên `side` cỡ `k`, cỡ dọc `long` ở góc ngón `v`, trong khung bàn tay: cổ tay (gốc), giữa lòng
- * tay và giữa mu tay (trên mặt da lòng bàn tay), tâm nắm (`handGripOf`), đầu ngón giữa
+ * tay và giữa mu tay (trên mặt da lòng bàn tay), tâm nắm (`handGripOf`), đầu ngón dẫn — đầu ngón giữa, dời dần sang đầu
+ * ngón trỏ khi ngón trỏ chìa xa hơn (`TIP_LEAD`)
  */
 export function handPoint(
   point: "wrist" | "palm" | "back" | "grip" | "tip",
@@ -381,8 +403,11 @@ export function handPoint(
   const thick = HAND_BONES.palm.half[0] * k;
   if (point === "palm") return [-side * thick, mid, 0];
   if (point === "back") return [side * thick, mid, 0];
-  const f = handFrames(v, side, k, long).middle1;
-  return add3(f.o, matVec(f.R, [0, -f.len, 0]));
+  const F = handFrames(v, side, k, long);
+  const m = boneEnd(F.middle1);
+  const n = boneEnd(F.index1);
+  const w = leadOf(m, n, long);
+  return [m[0] + (n[0] - m[0]) * w, m[1] + (n[1] - m[1]) * w, m[2] + (n[2] - m[2]) * w];
 }
 
 /**

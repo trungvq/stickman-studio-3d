@@ -82,7 +82,7 @@ export const HEAD_BODY_MARKS: readonly BodyMark[] = [
   "head",
 ];
 
-/** Điểm trên bàn tay đặt vào đích: cổ tay, giữa lòng tay, giữa mu tay, tâm nắm của dáng đang vẽ, đầu ngón giữa */
+/** Điểm trên bàn tay đặt vào đích: cổ tay, giữa lòng tay, giữa mu tay, tâm nắm của dáng đang vẽ, đầu ngón dẫn (`handPoint`) */
 export const HAND_POINTS = ["wrist", "palm", "back", "grip", "tip"] as const;
 export type HandPoint = (typeof HAND_POINTS)[number];
 /** Điểm bàn tay đặt vào đích ở `world.hands`: cả mốc của món đang cầm (`item:<mốc>`) */

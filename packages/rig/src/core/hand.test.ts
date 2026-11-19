@@ -24,6 +24,7 @@ import {
   handCapsules,
   handFrames,
   handGrip,
+  handPoint,
   handSkin,
   skinHand,
   handVec,
@@ -277,6 +278,25 @@ const WAVE = {
     { t: 1, pose: {}, hand: { armRight: { pose: "fist", turn: 80 } } },
   ],
 };
+
+describe("điểm `tip`: đầu ngón dẫn", () => {
+  it("dáng chỉ, gõ, nhón: đầu ngón trỏ; dáng các ngón cùng gập hay duỗi: đầu ngón giữa", () => {
+    const tap = [0, 0, 60, 20, 0, 0, 14, 26, 88, 98, 0, 0];
+    for (const v of [vec("point"), vec("pinch"), tap])
+      expect(dist(handPoint("tip", v, -1), tipOf(v, "index1"))).toBeLessThan(1e-9);
+    for (const p of ["rest", "open", "grip", "fist", "cup", "flat", "hook", "span"] as const)
+      expect(dist(handPoint("tip", vec(p), -1), tipOf(vec(p), "middle1"))).toBeLessThan(1e-9);
+  });
+  it("hoà dần khi ngón trỏ duỗi dần từ nắm đấm ra chỉ tay: mỗi 1/40 chặng dời dưới 1,2 cm", () => {
+    let prev = handPoint("tip", vec("fist"), -1);
+    for (let i = 1; i <= 40; i++) {
+      const v = vec("fist").map((x, j) => x + (vec("point")[j] - x) * (i / 40));
+      const p = handPoint("tip", v, -1);
+      expect(dist(p, prev)).toBeLessThan(0.012);
+      prev = p;
+    }
+  });
+});
 
 describe("kênh `hand` của hành động", () => {
   it(`đời ${ACTION_VERSION}: nội suy góc khớp giữa hai mốc theo \`ease\``, () => {

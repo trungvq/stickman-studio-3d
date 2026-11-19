@@ -1,37 +1,44 @@
 // Cầm điện thoại xem, tay kia gõ màn, lặp. Chạy `node tools/actions/phone-use.mjs`.
 import { emit } from "./emit.mjs";
 
-/** `hold` kênh tay cầm máy, `at` tâm nắm của tay ấy, hệ thân */
+/**
+ * `hold` kênh tay cầm máy, `at` tâm nắm của tay ấy, hệ thân; `up`, `down` đầu ngón trỏ tay gõ (`point: "tip"`) so với tâm nắm
+ * tay cầm, hệ thân: nhấc khỏi màn cỡ `2,5` dọc pháp tuyến màn, chạm màn (trục đốt cách mặt màn đúng bán kính ngón) — đo
+ * trên `dien-thoai@palmBox` với `roll` đầu máy ra trước; màn nghiêng khác nhau theo chỗ cầm nên mỗi chỗ một cặp
+ */
+const LOW = { up: [-0.9, -5, 4.9], down: [0.7, -2.9, 3.6] };
+const HIGH = { up: [-2.9, -4.6, 4.5], down: [-0.8, -3.1, 3.6] };
 const ROWS = [
   {
     name: "phone-use-3d",
     hold: "armRight",
     at: [90, -92, 32],
+    ...LOW,
     what: "trước ngực, tay phải cầm máy",
   },
   {
     name: "phone-use-left-3d",
     hold: "armLeft",
     at: [90, -92, 32],
+    ...LOW,
     what: "trước ngực, tay trái cầm máy",
   },
   {
     name: "phone-use-high-3d",
     hold: "armRight",
     at: [100, -120, 16],
+    ...HIGH,
     what: "giơ cao ngang ngực trên, tay phải cầm máy",
   },
   {
     name: "phone-use-high-left-3d",
     hold: "armLeft",
     at: [100, -120, 16],
+    ...HIGH,
     what: "giơ cao ngang ngực trên, tay trái cầm máy",
   },
 ];
 
-/** Đầu ngón tay gõ so với tâm nắm tay cầm máy: nhấc trên màn, chạm màn */
-const TAP_UP = [4, -17, 2];
-const TAP_DOWN = [4, -14, 2];
 /** Giây (phần lượt) chạm màn: hai cú gần nhau, nghỉ, một cú */
 const TAPS = [0, 0.15, 0.3, 0.42, 0.55, 0.8, 0.92, 1];
 const DOWN = new Set([0.15, 0.42, 0.92]);
@@ -59,7 +66,7 @@ await emit(
           [r.hold]: hold,
           [tap]: {
             to: "otherGrip",
-            offset: DOWN.has(t) ? TAP_DOWN : TAP_UP,
+            offset: DOWN.has(t) ? r.down : r.up,
             point: "tip",
             elbow: [-0.3, 0.7, 1],
           },
@@ -67,7 +74,7 @@ await emit(
         hand,
         ease: "smooth",
       })),
-      note: `Cầm điện thoại xem và gõ, ${r.what}: tâm nắm tay cầm ở hệ thân [${r.at.map(num).join(", ")}], tay kia giơ ngón trỏ trên màn (mốc \`otherGrip\`) và gõ ba cú mỗi lượt 1,4 s, lặp. Ghi hai tay, \`hand\`. Nền \`stand-3d\` hay \`sit-3d\`; món ở \`world.hands[].hold\` của tay cầm, như \`dien-thoai@palmBox\` với \`roll\` đầu máy ra trước. Chồng \`look-down-*\` cho đầu cúi nhìn máy; cùng họ: \`phone-use-3d\`, \`-left\`, \`-high\`, \`-high-left\`. Sinh bằng \`tools/actions/phone-use.mjs\`.`,
+      note: `Cầm điện thoại xem và gõ, ${r.what}: tâm nắm tay cầm ở hệ thân [${r.at.map(num).join(", ")}], tay kia gõ màn bằng lòng đầu ngón trỏ (mốc \`otherGrip\`, \`point: "tip"\`, lòng tay úp) ba cú mỗi lượt 1,4 s, lặp. Ghi hai tay, \`hand\`. Nền \`stand-3d\` hay \`sit-3d\`; món ở \`world.hands[].hold\` của tay cầm, như \`dien-thoai@palmBox\` với \`roll\` đầu máy ra trước. Chồng \`look-down-*\` cho đầu cúi nhìn máy; cùng họ: \`phone-use-3d\`, \`-left\`, \`-high\`, \`-high-left\`. Sinh bằng \`tools/actions/phone-use.mjs\`.`,
       preview: {
         stage: "stand",
         hold: {

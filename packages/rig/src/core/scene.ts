@@ -137,7 +137,7 @@ import {
   renameTouch,
 } from "./heldItem";
 import { BLEND_MAX, BLEND_MIN, blendDuration, blendFace, blendPose } from "./blend";
-import { HAND_REST, mixHand, type HandKey as ActionHandKey } from "./hand";
+import { HAND_REST, mixHand, tipLead, type HandKey as ActionHandKey } from "./hand";
 import { fingersOf, isHandShape, shapeFingers, withFingers, type HandShapes } from "./handLibrary";
 import { shapeBound, type CarryRef } from "./heldCarry";
 import { isCarryHold, supportChoice, supportGroup } from "./holdLink";
@@ -4049,12 +4049,14 @@ function handAt(
     const { h, elbow } = lend(h0, kt);
     const placed = !!(h.at || h.to);
     const term = placed ? reachTerm({ ...h, ...(h.to && { at: undefined }) }) : undefined;
-    // lòng tay theo ý định của mốc; mốc không khai giữ bàn tay của hành động
+    // lòng tay theo ý định của mốc; mốc không khai giữ bàn tay của hành động, trừ tay gõ bằng đầu ngón trỏ: lòng tay úp
     const aim: Aim | undefined =
       intent ??
       (h.palm || h.fingers
         ? keyAim({ palm: h.palm, fingers: h.fingers, bend: h.bend })
-        : undefined);
+        : placed && presses(h, host?.rt.hands)
+          ? keyAim({ palm: "down", bend: h.bend })
+          : undefined);
     if (!placed && !aim) return undefined;
     return {
       w: placed ? 1 : 0,
@@ -4260,6 +4262,16 @@ function autoRotation(
   if (!(g > 1e-9)) return R1;
   const s = hermite(R0 && -rotGap(R0, R1), 0, g, R3 && g + rotGap(R2, R3), n.h0, n.h, n.h2, u);
   return mixRotation(R1, R2, s / g);
+}
+
+/**
+ * Mốc gõ, bấm bằng đầu ngón: điểm `tip` trên dáng ngón trỏ dẫn (`tipLead` quá nửa), không khai `palm` / `fingers` — lòng tay
+ * mặc định úp để lòng đầu ngón ấn xuống mặt bấm. docs/03-scene.md#đích-bàn-tay-thế-giới
+ */
+function presses(h: HandKey["right"], lib: HandShapes = {}): boolean {
+  if (!h || h.point !== "tip" || h.pose === undefined || h.palm || h.fingers) return false;
+  const f = shapeFingers(h.pose, lib, h.w ?? 1);
+  return !!f && tipLead([0, 0, ...f]) > 0.5;
 }
 
 /** Mốc chỉ đổi dáng ngón (`pose`, không `at` / `to` / `hold`): đích và khuỷu bỏ qua nó */
