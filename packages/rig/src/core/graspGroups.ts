@@ -53,6 +53,10 @@ export interface PoseRef {
   knuckle?: number;
   tip?: number;
   thumb?: ThumbAngles;
+  /** Xoay ngón cái quanh trục đốt gốc (`thumbRoll`, độ); có thì đè của dáng */
+  roll?: number;
+  /** Gập gốc, ngọn chung của giữa – út (`fingersBase`, `fingersTip`, độ); có thì đè dáng và `knuckle`, `tip` */
+  others?: [number, number];
 }
 
 /** Góc ngón cái `[dạng, đối, gập gốc, gập ngọn]`, độ (`Fingers.thumb`) */
@@ -331,6 +335,40 @@ const OFF_COST = 1;
  * ngón trỏ) — mặc định của `slant`; rig thử cả `0` khi cổ tay không theo được
  */
 export const WRAP_SLANT = 25;
+/**
+ * `cylinder` `pinch`: hai đệm quay vào nhau — ngón cái đối hết, xoay sấp `45°`, trỏ gập gốc nhiều, ngọn ít. Dáng khép (đệm
+ * chạm đệm) ở bán kính `ROD_PINCH_RANGE[0]` lần `W`, hoà sang dáng mở (trỏ duỗi bớt, ngón cái ngửa đốt — khe hai đệm
+ * ~0,55 · `W`) ở `ROD_PINCH_RANGE[1]`: khe hai đệm gần bằng đường kính que. Giữa – út co sâu (`others`) tránh que
+ */
+export const ROD_PINCH_CLOSED: PoseRef = {
+  pose: "pinch",
+  knuckle: 25,
+  tip: -25,
+  thumb: [40, 100, -10, -10],
+  roll: 45,
+  others: [105, 105],
+};
+export const ROD_PINCH_OPEN: PoseRef = {
+  pose: "pinch",
+  knuckle: -15,
+  tip: -10,
+  thumb: [40, 100, -20, -20],
+  roll: 45,
+  others: [85, 95],
+};
+export const ROD_PINCH_RANGE: [number, number] = [-0.05, 0.25];
+/** `cylinder` `pinch`: `tilt` (que quay quanh đường kẹp, độ) trong `±` ngần này */
+export const ROD_PINCH_TILT = 90;
+/**
+ * `cylinder` `pinch`: que ở `tilt` 0 ngả ngần này độ quanh đường kẹp từ hướng vuông góc hai đốt ngọn (dương: về phía lòng
+ * tay) — que dựng đứng thì cổ tay hơi ngửa (gập −9° … −4° ở tay trước ngực), giữa – út co sâu (`others`) cho que mảnh lọt
+ * (khe ngón giữa ≥ 0,5 ở cỡ tay 1,75 – 2)
+ */
+export const ROD_PINCH_LEAN = 30;
+/** `cylinder` `pinch`: chỗ đệm trên trục đốt ngọn, phần chiều dài đốt tính từ gốc */
+export const ROD_PINCH_PAD = 0.7;
+/** `cylinder` `pinch`: đỉnh da cách đường kẹp dưới ngần này (đơn vị rig) là mặt đệm trên đường kẹp */
+export const ROD_PINCH_BAND = 1.5;
 /** `cylinder`: tâm nắm cách phần `grip: false` ít nhất ngần này lần `W` dọc trục */
 export const GRIP_CLEAR = 0.3;
 /** `cylinder`: thanh hộp áp mặt rộng ít nhất ngần này lần `W` thì lòng áp phẳng, ngón dọc thân (`flat`) */
@@ -698,6 +736,19 @@ const SPECS: {
         fixture: "dien-thoai#doc",
         kinds: ["rod"],
       },
+      pinch: {
+        frame: "nf",
+        pose: {
+          open: ROD_PINCH_OPEN,
+          closed: ROD_PINCH_CLOSED,
+          by: "radius",
+          unit: "W",
+          range: ROD_PINCH_RANGE,
+        },
+        // giữa – út giữ dáng (`extend`): hoà về dáng nghỉ thì phồng nắm đấm đổi, đệm ngón cái rời que
+        roles: roles("press", "extend", "free", { index: "press" }),
+        curl: THIN_CURL,
+      },
     },
     choices: {
       part: names(undefined, { from: "longest" }),
@@ -707,7 +758,11 @@ const SPECS: {
       slant: range(0, WRAP_SLANT, {
         default: WRAP_SLANT,
         cost: OFF_COST,
-        gridByVariant: { wrap: [0, WRAP_SLANT], flat: [WRAP_SLANT] },
+        gridByVariant: { wrap: [0, WRAP_SLANT], flat: [WRAP_SLANT], pinch: [WRAP_SLANT] },
+      }),
+      tilt: range(-ROD_PINCH_TILT, ROD_PINCH_TILT, {
+        default: 0,
+        gridByVariant: { wrap: [0], flat: [0], pinch: [0] },
       }),
     },
     hands: "either",

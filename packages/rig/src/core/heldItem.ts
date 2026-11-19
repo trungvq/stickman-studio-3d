@@ -616,7 +616,7 @@ export const GROUP_VARIANTS = {
   card: ["lateral", "edges"],
   pen: ["grip"],
   chopsticks: ["grip"],
-  cylinder: ["wrap", "flat"],
+  cylinder: ["wrap", "flat", "pinch"],
   round: ["palm", "top"],
   bowl: ["side", "pinch"],
   handle: ["hook"],

@@ -86,7 +86,7 @@ dùng**: mười nhóm chạy, bốn nhóm `round`, `hug`, `clamp`, `soft` là `
 
 | | Bản đầu | Để sau |
 |---|---|---|
-| Nhóm | `sheet` (`pinch`, `flat`, `rim`), `card` (`lateral`), `pen` (`grip`), `chopsticks` (`grip`), `cylinder` (`wrap`, `flat`), `bowl` (`pinch`, `side`), `handle` (`hook`), `palmBox`, `platform` (`palm`), `carry` | `round`, `hug`, `clamp`, `soft`; biến thể `card.between`, `cylinder.index`, `handle.wrap`, `handle.ring`, `platform.tips`, `bowl.base` |
+| Nhóm | `sheet` (`pinch`, `flat`, `rim`), `card` (`lateral`), `pen` (`grip`), `chopsticks` (`grip`), `cylinder` (`wrap`, `flat`, `pinch`), `bowl` (`pinch`, `side`), `handle` (`hook`), `palmBox`, `platform` (`palm`), `carry` | `round`, `hug`, `clamp`, `soft`; biến thể `card.between`, `cylinder.index`, `handle.wrap`, `handle.ring`, `platform.tips`, `bowl.base` |
 | Khối hình | `slab`, `disc`, `rod`, `lathe`, `box`, `face` | `path` (quai cong), `ball` |
 | Món | `shape` + `part` + `detail`, `parts` (kể cả quai `strap`), `front`, `top`, `anchors`, `seats`, `touch`, `hang` | `joints` (que trên của đũa), `soft`; `seats` thay bằng điểm treo rig chọn trên quai |
 | Cảnh | `items` (cả mốc món nằm `rest`); `hold` có chỗ cầm, `"món@nhóm"`, `both`, `touch`, `regrip`; tay dẫn với ý định, `keep` | `write`, `pick`, lớp không cầm (`contact`) |
@@ -426,7 +426,7 @@ tại**, lưu ở `core/__fixtures__/grip-frames.json`; nhóm trỏ fixture bằ
 | 2 | `card` | Tấm nhỏ kẹp giữa ngón cái và sườn ngón trỏ, hay kẹp đầu ngón qua hai mép | `slab` mỏng | một | thẻ, thẻ phòng, giấy tờ | bản đầu (`lateral`, `edges`) |
 | 3 | `pen` | Bút | `rod`/`lathe` mảnh + `tip` | một | bút | bản đầu (`grip`) |
 | 4 | `chopsticks` | Đũa | hai `rod` mảnh + `tip` | một | đũa | bản đầu (`grip`) |
-| 5 | `cylinder` | Thân trụ | `lathe`, `rod` | một / hai | chai ×2, bình, bộ đàm, ống nghe ×2 | bản đầu (`wrap`, `flat`) |
+| 5 | `cylinder` | Thân trụ | `lathe`, `rod` | một / hai | chai ×2, bình, bộ đàm, ống nghe ×2, mẩu khoai (`pinch`) | bản đầu (`wrap`, `flat`, `pinch`) |
 | 6 | `round` | Khối tròn | `ball`, `lathe` ngắn | một | — | để sau |
 | 7 | `bowl` | Chén không quai | `lathe` có miệng | một / hai | chén | bản đầu (`pinch`, `side`) |
 | 8 | `handle` | Quai | `rod` có khe sau (`path` để sau) | một | túi, cốc bia, vali, vòng chìa | bản đầu (`hook`) |
@@ -609,7 +609,7 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
 - **Độ khớp** (tay `1,75` / `2`, hai tay, hai que): trên da, que trên cách ngón cái ≤ 0,4, trỏ ≤ 0,6, giữa ≤ 1,3; que dưới cách kẽ
   cái – trỏ ≤ 0,25, áp út ≤ 0,3; đốt ngọn trỏ không chạm que dưới, áp út không chạm que trên; lún ≤ 0,25, lực đối ≥ 120°.
 
-#### 5. `cylinder` — thân trụ (bản đầu: `wrap`, `flat`)
+#### 5. `cylinder` — thân trụ (bản đầu: `wrap`, `flat`, `pinch`)
 
 - **Cần**: `lathe` hay `rod` có `r ∈ [0,06 · W, 0,95 · W]` (với `rod` xét cả `R ≤ 0,95 · W`). **Đoạn bám liền** (mục 2) dài
   `≥ 0,6 · W` (ba ngón trỏ, giữa, áp út) và chứa được tâm nắm cách phần `grip: false` `≥ 0,3 · W` (`GRIP_CLEAR`; `alongRoom`).
@@ -660,9 +660,30 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
   - **Dáng**: `span` ở cả hai đầu (không hoà theo bán kính; ngón cái dạng dọc cạnh); `by: "radius"` trong `[0,06, 0,95] · W` như
     `wrap`. Dáng kẹp đầu ngón nên `grip` dùng `HELD_GRIP_PINCH` (mục 7).
   - **Vai trò**: ngón cái, trỏ, giữa, áp út và lòng tay `press`, út `support`.
+- **Biến thể `pinch`** (`frame: "nf"`, `rodPinch`, dựng từ xương và da bàn tay ở dáng gốc, không fixture): que mảnh (mẩu khoai,
+  que, bút chì nhặt lên) kẹp giữa đệm ngón cái và đệm ngón trỏ, lòng tay và các ngón khác không chạm.
+  - **Khi nào rig chọn**: không bao giờ — chỉ khi cảnh khai `variant: "pinch"` (`món@cylinder/pinch`); `variantOf` vẫn chỉ trả
+    `wrap` hay `flat`.
+  - **Chỗ tiếp xúc**: đường kẹp nối hai điểm trên trục đốt ngọn ngón cái và đốt ngọn trỏ ở `ROD_PINCH_PAD` = 0,7 chiều dài đốt
+    (dáng gốc đã hoà theo bán kính); trục que qua giữa hai mặt da trên đường ấy (đỉnh da cách đường dưới `ROD_PINCH_BAND` = 1,5),
+    nên khe hai bên bằng nhau. Đường kẹp từ ngón cái sang trỏ về `−ρ(around)` (`around` xoay bàn tay quanh que). Trục que
+    vuông góc đường kẹp và hướng trung bình hai đốt ngọn — que nằm ngang qua hai đệm, chĩa về phía ngón cái — rồi ngả
+    `ROD_PINCH_LEAN` = 30° cộng `tilt` quanh đường kẹp (dương: về phía lòng tay): que dựng đứng (ý định `up: top` mặc định) thì
+    cổ tay hơi ngửa — gập −9° … −4°, xoay ngửa 40–50° ở tay trước ngực (`tilt` −60 thì cổ tay gập về lòng 20–26°, bàn tay rủ). `tilt`
+    dương ngửa thêm, âm gập về lòng tay. `thumb` `up`: đầu `+a` (về `top`) chĩa ra phía ngón cái, `down` ngược lại; `along` như `wrap` (mốc chỗ kẹp dọc que).
+  - **Dáng**: `pinch` với ngón cái đối hết, xoay sấp 45° (`PoseRef.roll`) để hai đệm quay vào nhau (lệch 20–23°): dáng khép
+    `ROD_PINCH_CLOSED` (ngón cái `[40, 100, −10, −10]`, trỏ `[70, 10]`, đệm chạm đệm) ở bán kính `−0,05 · W`, dáng mở
+    `ROD_PINCH_OPEN` (ngón cái `[40, 100, −20, −20]`, trỏ `[30, 25]`, khe hai đệm ~0,55 · `W`) ở `0,25 · W` (`ROD_PINCH_RANGE`):
+    khe da hai đệm ≈ đường kính que + 0,5. Giữa, áp út, út co sâu (`PoseRef.others`: `[105, 105]` khép, `[85, 95]` mở) cho que
+    ngả về lòng tay lọt qua.
+  - **Vai trò**: ngón cái, trỏ `press`; giữa, áp út, út `extend`; lòng tay `free`; `curl` 15 (`THIN_CURL`). Giữa – út không hoà về
+    dáng nghỉ: hoà thì phồng nắm đấm (`HAND_FIST`, theo độ gập gốc ngón giữa) đổi, cả bàn tay xẹp và đệm ngón cái rời que.
+  - **Độ khớp** (que r 0,8 / 1,2 / 2 / 3, `along` 0,2, cỡ tay 1,75 / 2, hai tay; `rodPinch.test.ts`): khe đệm cái, đệm trỏ ≤ 0,8,
+    lực đối 173–180°, lún ≤ 0,5, không xuyên, lòng tay cách que > 2; que r ≤ 1,2 cách ngón giữa – út > 0,5 (que r ≥ 2 chạm
+    ngón giữa).
 - **Lựa chọn**: `part` (phần có khối trụ, bám được; mặc định **phần có khối hình dài nhất**, `from: "longest"` — thân chai, không
   phải vai hay cổ), `along` ∈ {`low`, **`mid`**, `high`} hay số, `around` ∈ [0°, 360°) (mục 2; tay dẫn
-  không khai thì `0`), `thumb` ∈ {**`up`**, `down`}, `slant` ∈ [0°, 25°] (**25**, `wrap`), `variant` ∈ {`wrap`, `flat`} (không khai thì rig suy theo `around`, xem `flat`). `along` trải **cả đoạn bám liền**, nên `part` chọn khối cho đặc trưng (số đo,
+  không khai thì `0`), `thumb` ∈ {**`up`**, `down`}, `slant` ∈ [0°, 25°] (**25**, `wrap`), `variant` ∈ {`wrap`, `flat`, `pinch`} (không khai thì rig suy `wrap` hay `flat` theo `around`, xem `flat`), `tilt` ∈ [−90°, 90°] (**0**, chỉ `pinch`). `along` trải **cả đoạn bám liền**, nên `part` chọn khối cho đặc trưng (số đo,
   mặt) còn `along` chạy qua mọi khối nối nhau. Tay trượt dọc thanh đổi `along` giữa hai mốc tay (mục 4).
   - Cảnh không khai `part`: rig chỉ giải trên phần mặc định (cầm vai, cổ chai thì cảnh khai). Rig giải `along`: lưới ¼, ½, ¾ của
     đoạn bám kẹp vào **chính khối hình** của ứng viên (`ownAlong`, giao miền `alongRoom`), nên thân chai không trượt sang vai cùng
@@ -1590,9 +1611,9 @@ Phép đổi không khớp tuyệt đối; studio và agent đọc `rows` trư�
    lần độ lồi da `δ` của từng đốt ở dáng gốc (khoảng lớn nhất từ đỉnh da có trọng số lớn nhất ở
    đốt ấy tới mặt nang của đốt, `handSkin`, `handMesh.ts:287`) và `heldFit` nhắm `touch` trên nang bán kính `r + δ`. Ngón ôm và `check`
    cùng đo một mặt da. Cùng `δ` ấy dùng khi đặt lòng tay lên mặt trụ, mặt tấm (`contact`).
-4. **Bút, đũa** có dáng soạn tay (`tripod`, `chopsticks`, trong `HAND_POSES`, `hand.ts:31`; nhóm `pen`, `chopsticks`): hai đốt mỗi ngón không ôm theo
-   que mảnh bằng cách cuộn tới chạm, nên vai trò ở đây là `press`/`support` với tầm cuộn nhỏ (`curl ≤ 15°`, `THIN_CURL`) — chỉ để khép khe và gỡ
-   lún. Viết, gắp là động tác (để sau).
+4. **Bút, đũa, que kẹp** có dáng soạn tay (`tripod`, `chopsticks`, trong `HAND_POSES`, `hand.ts:31`; nhóm `pen`, `chopsticks`;
+   `cylinder` `pinch` dùng `pinch` chỉnh bằng `PoseRef`): hai đốt mỗi ngón không ôm theo que mảnh bằng cách cuộn tới chạm, nên
+   vai trò ở đây là `press`/`support` với tầm cuộn nhỏ (`curl ≤ 15°`, `THIN_CURL`) — chỉ để khép khe và gỡ lún. Viết, gắp là động tác (để sau).
 5. **Ngón hoà khi đổi lần cầm**: món đặt trước hoà ngón tuyến tính từ nghiệm cũ sang mới trong `HOLD_BLEND` (mục 5, Đổi lần
    cầm).
 6. **Nhớ theo lần cầm.** `heldFit` đo 1,75–4,16 ms một bàn tay một khung (cỡ `1,61`, fixture `bang-gia#doc` 1,75, `tom-hum#nhac`

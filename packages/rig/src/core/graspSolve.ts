@@ -17,6 +17,9 @@ import {
   groupFits,
   groupNeeds,
   PINCH_ALONG,
+  ROD_PINCH_BAND,
+  ROD_PINCH_LEAN,
+  ROD_PINCH_PAD,
   holdDefaults,
   longEdges,
   namedVariants,
@@ -40,6 +43,7 @@ import {
   HAND_DOF,
   HAND_PIECES,
   HAND_POSES,
+  handFrames,
   handVec,
   mixHand,
   wristTurn,
@@ -167,6 +171,11 @@ export interface ContactInput {
     finger: SkinFinger,
     at?: Pick<GraspContact, "thick" | "radius" | "thumbRadius" | "width">,
   ) => readonly V3[];
+  /** Xương đốt ngọn của ngón cái, trỏ hay giữa ở dáng gốc: gốc `o`, đầu `tip`, toạ độ như `palmSkin` */
+  fingerBone?: (
+    finger: SkinFinger,
+    at?: Pick<GraspContact, "thick" | "radius" | "thumbRadius" | "width">,
+  ) => { o: V3; tip: V3 } | undefined;
 }
 
 export type SkinFinger = "thumb" | "index" | "middle";
@@ -669,6 +678,58 @@ const flatRod: ContactFn = (x) => {
 };
 
 /**
+ * `cylinder` `pinch` (khung `nf`): que mảnh kẹp giữa đệm ngón cái và đệm ngón trỏ ở `along`, lòng tay và các ngón khác không
+ * chạm. Đường kẹp nối hai điểm trên trục đốt ngọn ngón cái và đốt ngọn trỏ ở `ROD_PINCH_PAD` chiều dài đốt, dáng gốc (hoà
+ * theo bán kính); trục que đi qua giữa hai mặt da trên đường ấy, đường kẹp từ ngón cái sang trỏ về `−ρ(around)`. Trục que
+ * vuông góc đường kẹp và hướng trung bình hai đốt ngọn, ra phía ngón cái (que nằm ngang qua hai đệm), ngả `ROD_PINCH_LEAN`
+ * cộng `tilt` quanh đường kẹp (dương: về phía lòng tay); đầu `+a` chĩa về phía ngón cái khi `thumb` `up`, `−a` khi `down`
+ */
+const rodPinch: ContactFn = (x) => {
+  const f = x.feature as RodFeature | LatheFeature;
+  const clear = (GRIP_GROUPS.cylinder.clear ?? 0) * x.dims.W;
+  const p = axialAt(x.geom, f, alongFrac(x.along, 1, x.dims.W), x.around ?? 0, { clear });
+  const radius = f.kind === "lathe" ? p.r : f.R;
+  const out = scale3(p.a, x.thumb === "down" ? -1 : 1);
+  const A = neg(p.rho);
+  const C = cross3(A, out);
+  const tb = x.fingerBone?.("thumb", { radius });
+  const ib = x.fingerBone?.("index", { radius });
+  const T0 = x.fingerSkin?.("thumb", { radius }) ?? [];
+  const I0 = x.fingerSkin?.("index", { radius }) ?? [];
+  if (!tb || !ib || !T0.length || !I0.length) {
+    const fingers = unit(cross3(out, A));
+    return { at: add3(p.at, scale3(p.rho, radius)), along: p.along, palm: A, fingers, radius };
+  }
+  const pad = (b: { o: V3; tip: V3 }) => add3(b.o, scale3(sub3(b.tip, b.o), ROD_PINCH_PAD));
+  const Ct = pad(tb);
+  const Dh = unit(sub3(pad(ib), Ct));
+  // mặt da trong của hai đệm trên đường kẹp: đỉnh da gần đường ấy, xa nhất về phía ngón kia
+  const onLine = (P: readonly V3[]) => {
+    const q = P.filter((v) => len3(perp(sub3(v, Ct), Dh)) < ROD_PINCH_BAND);
+    return (q.length ? q : P).map((v) => dot3(sub3(v, Ct), Dh));
+  };
+  const mid = add3(Ct, scale3(Dh, (Math.max(...onLine(T0)) + Math.min(...onLine(I0))) / 2));
+  // hướng que: vuông góc đường kẹp và hướng trung bình hai đốt ngọn, về phía ngón cái (`side · (n × f)`), quay quanh đường kẹp
+  const ua = unit(add3(unit(sub3(tb.tip, tb.o)), unit(sub3(ib.tip, ib.o))));
+  let O0 = unit(cross3(Dh, ua));
+  if (O0[2] * x.side < 0) O0 = neg(O0);
+  const tl = (x.tilt + ROD_PINCH_LEAN) * D2R;
+  const toward = dot3(cross3(Dh, O0), [1, 0, 0]) < 0 ? -1 : 1;
+  const Oh = unit(mix2(O0, Math.cos(tl), cross3(Dh, O0), toward * Math.sin(tl)));
+  const Ch = cross3(Dh, Oh);
+  // hệ bàn tay → hệ món: đường kẹp `Dh` → `−ρ`, hướng que `Oh` → `out`
+  const map = (v: V3): V3 =>
+    add3(add3(scale3(A, dot3(v, Dh)), scale3(out, dot3(v, Oh))), scale3(C, dot3(v, Ch)));
+  return {
+    at: sub3(p.at, map(mid)),
+    along: p.along,
+    palm: map([1, 0, 0]),
+    fingers: map([0, 1, 0]),
+    radius,
+  };
+};
+
+/**
  * `bowl` `side` (khung `nt`): lòng tay áp thành chén ở `along` (từ đáy), phía `ρ(around)`, ngón cái về miệng; lòng tay
  * ngả theo dốc thành tối đa `BOWL_TILT_MAX`, tâm nắm dời ra theo `ρ` tới khi da lòng tay cách hình `BOWL_GAP`
  */
@@ -971,7 +1032,7 @@ export const CONTACTS: Partial<Record<GroupId, Record<string, ContactFn>>> = {
   sheet: { pinch, flat, rim },
   card: { lateral, edges: cardEdges },
   palmBox: { default: palmBox },
-  cylinder: { wrap, flat: flatRod },
+  cylinder: { wrap, flat: flatRod, pinch: rodPinch },
   platform: { palm: platformPalm },
   chopsticks: { grip: chopGrip },
   pen: { grip: penGrip },
@@ -1119,6 +1180,8 @@ function pickFeature(
 const BASE = [HAND_DOF.indexOf("indexBase"), HAND_DOF.indexOf("fingersBase")];
 const PALM = HAND_PIECES.indexOf("palm");
 const THUMB = HAND_DOF.indexOf("thumbAbd");
+const ROLL = HAND_DOF.indexOf("thumbRoll");
+const OTHERS = HAND_DOF.indexOf("fingersBase");
 
 function poseVec(r: PoseRef): number[] {
   if (!(r.pose in HAND_POSES)) throw new Error(`dáng \`${r.pose}\` chưa soạn`);
@@ -1128,6 +1191,8 @@ function poseVec(r: PoseRef): number[] {
     v[i + 1] += r.tip ?? 0;
   }
   r.thumb?.forEach((a, i) => (v[THUMB + i] = a));
+  if (r.roll !== undefined) v[ROLL] = r.roll;
+  if (r.others) [v[OTHERS], v[OTHERS + 1]] = r.others;
   return v;
 }
 
@@ -1315,6 +1380,19 @@ export function graspFrame(
     tip: spec.anchors?.tip?.at,
     palmSkin: (at) => skinOf(at, [PALM]),
     fingerSkin: (finger, at) => skinOf(at, PIECES_OF[finger]),
+    fingerBone: (finger, at) => {
+      const kk = dims.W / (200 * HAND_BONES.palm.half[1]);
+      const ll = dims.P / (100 * HAND_BONES.palm.len);
+      const F = handFrames(basePose(vs.pose!, feature, dims, at), side, kk, ll)[`${finger}1`];
+      const c = gripCenter(vs.pose!.closed.pose as HandPose, side, kk, ll);
+      const { n, f: fd } = handAxes(side);
+      const z = cross3(n, fd);
+      const loc = (q: V3): V3 => {
+        const d = sub3(q, c);
+        return [dot3(d, n) * 100, dot3(d, fd) * 100, dot3(d, z) * 100];
+      };
+      return { o: loc(F.o), tip: loc(add3(F.o, matVec(F.R, [0, -F.len, 0]))) };
+    },
   });
   const au = raw ? undefined : ref!.authored;
   const place: HandPlace = au
