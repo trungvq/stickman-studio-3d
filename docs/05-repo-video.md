@@ -857,15 +857,32 @@ ghế hơn (ở trong khi đứng nhìn dọc thân xe), *chân phía cửa* là
   trong `0,35…0,8` của pha hạ), không nắm mép khung trên: lúc hạ người lưng quay vào xe, chỗ nắm nằm sau đầu.
 - *Tay phía cửa*: lòng tay áp cạnh hông, tì đùi từ phần `0,5` pha hạ, tì mặt ngồi cạnh hông (`SEAT_HAND`) từ phần `0,85`
   pha hạ tới nửa pha rút, rồi về đùi.
-- Mọi chỗ đặt tay là điểm thế giới đi theo thân (mốc thân `rig.bodyMarkAt`, đùi theo chân của mốc); đổi chỗ thì hoà chỗ cũ
-  sang chỗ mới trong `HAND_BLEND` `0,3 s`. Tới phần `LAP_UNTIL` `0,85` pha rút hai tay trên đùi, rồi hoà về tay của dáng
-  ngồi ở mốc cuối. Mốc đứng ghi góc tay như `stand-3d`; các mốc trong `ARM_RAMP` `0,2 s` đầu (người còn đứng yên) không ghi
-  tay, nên tay hoà từ góc khớp sang đích suốt quãng ấy thay vì nhảy trong một mốc. Track một tay chồng trên (khoác túi,
-  cầm) vẫn đè tay ấy.
-- *Khối váy*: người mặc váy hay áo vạt dài (`wornSkirt` của `pieces.hem`) thì sau khi soạn, bộ sinh dựng người 3D như three
-  vẽ ở từng mốc tay đặt (đùi, mặt ngồi), cắt đường đứng qua lòng tay với khối váy; lòng tay thấp hơn mặt trên khối quá
-  `BOARD_SKIRT.clear` `1,5 · s` thì nâng lên mặt trên ấy (chỉ khi cần nâng không quá `BOARD_SKIRT.max` `40 · s`, sâu hơn là
-  tay ở dưới vạt, để nguyên). Lệnh in số mốc nâng và mức nâng cao nhất; không cần nâng tay sau khi sinh.
+- Mọi chỗ đặt tay là khung lòng tay thế giới đi theo thân (mốc thân `rig.bodyMarkAt`, đùi theo chân của mốc): điểm, hướng
+  lòng tay, hướng ngón. Lòng tay trên đùi úp theo độ dốc mặt trên của đùi, vạt áo, váy đo ở người 3D dựng riêng đúng dáng
+  chân, thân của mốc (không dựng cả cảnh). Đổi chỗ thì hoà chỗ cũ sang chỗ mới trong `HAND_BLEND` `0,3 s`. Từ phần
+  `LAP_UNTIL` `0,85` pha rút hai lòng tay hoà sang tay của dáng ngồi `gen sit`: bộ sinh đo đúng khớp rig vẽ cho dáng ấy, và
+  mốc cuối ghi chính các góc ấy, không để rig nội suy từ góc sang đích theo mốc. Mốc đứng ghi góc tay như `stand-3d`; các
+  mốc trong `ARM_RAMP` `0,2 s` đầu (người còn đứng yên) không ghi tay, góc tay nội suy từ mốc đứng sang mốc tay đầu. Track
+  một tay chồng trên (khoác túi, cầm) vẫn đè tay ấy.
+- *Tay do bộ sinh tính, rig không giải* (`gen-board-arm.mjs`): mỗi mốc ghi thẳng góc tay `[vai, khuỷu, lệch cổ tay, dang,
+  xoắn vai]` và `turn` / `bend` của bàn tay, nghịch đúng phép dựng `arm3` của lõi; không `reach`, không `elbow`. Từ khung
+  lòng tay ra cổ tay; khuỷu là góc quanh trục vai → cổ tay (tính từ `prefPole` của rig), lưới `BOARD_ARM.step` `5°`. Bàn
+  tay được xoay quanh pháp tuyến lòng tay `±yaw` `90°` và nghiêng quanh trục ngang lòng tay `±tilt` `40°` (gót hay đầu ngón
+  tì), có giá. Giá mỗi trạng thái: lệch khuỷu ưu tiên, góc cổ tay so với tầm (`TURN_MAX`, `AIM_BEND`, `AIM_DEV`), vượt tầm
+  và gập ngược quá `ARM_INWARD − inward` phạt rất nặng. Cả chuỗi mốc chọn một lượt (Viterbi): giá đổi nhanh giữa hai mốc,
+  cấm đổi quá `rate` `360 °/s` (khuỷu không lật trong một mốc), rồi lọc `[1, 2, 1]` `refine` lần. Dò hai tầng cho nhanh:
+  lưới thô `coarse` (xoay `30°`, nghiêng `20°`) đo độ nâng thật, rồi chỉnh mịn quanh ô thô rẻ nhất với độ nâng nội suy.
+  Không trạng thái nào giữ cổ tay trong tầm thì kẹp góc cổ tay vào tầm: lòng tay nghiêng khỏi đích chừng ấy, lệnh in số độ.
+- *Tay không lún vào người*: đo lưới bàn tay duỗi với hông, hai chân, váy (`bodyColumns` "lap" của `gen.mjs`: đường đứng
+  qua mỗi đỉnh bàn tay cắt từng mesh thành đoạn đặc). Đỉnh nằm trong một đoạn thì đo độ sâu thật (khoảng tới mặt gần nhất,
+  dò trong `BOARD_LAP.reach` `12 · s`); sâu không quá `graze` `2 · s` là chạm mặt (đầu ngón vắt theo sườn đùi) nên để yên,
+  sâu hơn thì nâng cổ tay bằng độ sâu ấy cộng `clear` `1 · s`, đo tiếp (tối đa `passes` `6` lượt, trần `max` `40 · s`). Độ
+  nâng là một phần của trạng thái lúc chọn khuỷu, xoay, nghiêng; trạng thái đã chọn đo lại bằng đủ đỉnh bàn tay, nở sang
+  mốc kề, lọc `[1, 2, 1]` `smooth` `2` lần. Lòng tay lún vào thân trên (vạt áo khoác dựng đứng, bụng lúc cúi) thì dời chỗ
+  đặt ra trước theo hướng thân cho khỏi, vì nâng không gỡ được. Lệnh in số mốc nâng, mức cao nhất, cảnh báo cổ tay kẹp ở
+  biên, khuỷu gập ngược, bàn tay còn lún vào thân trên (soi `can-tay`).
+- *Tự kiểm luôn chạy* nhóm `move`, `held` trên cảnh sau khi sinh (`--clash` thêm nhóm `clash`); dòng mới thì không ghi,
+  `--force` mới ghi kèm cảnh báo.
 
 **Tự kiểm** (`--check`) trên cảnh đã vá, mỗi khung trong quãng sinh, chỉ người vào / ra:
 

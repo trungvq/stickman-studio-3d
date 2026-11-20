@@ -26,7 +26,7 @@ import {
   HEAD_CLEAR,
   HEEL_GAP,
   LAP_UNTIL,
-  BOARD_SKIRT,
+  BOARD_LAP,
   LEG_RANGE,
   LAND,
   LAND_REACH,
@@ -34,6 +34,7 @@ import {
   LIFT_MAX,
   LIFT_RATE,
   OUTER_HAND,
+  SIDE_PALM,
   SEAT_HAND,
   SHIN_SILL,
   SHUFFLE_LIFT,
@@ -54,6 +55,23 @@ import {
   window01,
   yawOfDir,
 } from "./gen-board.mjs";
+import {
+  BOARD_ARM,
+  add3,
+  armAngles,
+  elbowAt,
+  handFrame,
+  mul3,
+  mv3,
+  pickChain,
+  poleDeg,
+  clampWrist,
+  refineChain,
+  slerpFrame,
+  sub3,
+  turnFrame,
+  unit3,
+} from "./gen-board-arm.mjs";
 import { GEN_PAGES } from "./gen-pages.mjs";
 import {
   POUR_ALONG,
@@ -279,6 +297,8 @@ async function sceneThree(root, o, scene, data) {
   if (on.error) fail(on.error);
   const cache = new Map();
   return {
+    /** Rig three của repo (`stickman.world`): dựng riêng một người (`fromCharacter`, `act`) */
+    rig: world.rig,
     propsAt(t) {
       const k = +t.toFixed(4);
       if (!cache.has(k)) {
@@ -302,41 +322,153 @@ async function sceneThree(root, o, scene, data) {
 }
 
 /**
- * Đường đứng qua điểm sàn `[x, z]` (thế giới rig) cắt khối váy của người 3D `fig` (`fig.skirt.group`, như three vẽ) ở đâu:
- * `{ top, bottom }` là `y` rig (y xuống) của mặt trên, mặt dưới; không cắt hay không mặc váy thì `undefined`
+ * Phần người 3D `fig` như three vẽ để hỏi đường đứng — `part` `"lap"`: hông, hai chân, váy (không thân trên); `"torso"`: thân
+ * trên từ eo (không cánh tay từ vai, cổ, đầu). `spansAt(X, Z)` (toạ độ three) trả các đoạn đặc `[trên, dưới]` (y three, lên
+ * là dương): mỗi mesh tách theo cặp điểm vào, ra dọc đường, nên đùi, ống quần, váy là các đoạn riêng. Tam giác chia ô lưới
+ * mặt sàn cho nhanh
  */
-function skirtSpan(fig, x, z) {
-  const group = fig?.skirt?.group;
-  if (!group) return undefined;
-  const [X, Z] = [x / 100, -z / 100];
-  let [hi, lo] = [-Infinity, Infinity];
-  group.traverse((m) => {
-    const pos = m.isMesh && m.geometry?.attributes?.position;
-    if (!pos) return;
-    const e = m.matrixWorld.elements;
-    const at = (i) => {
-      const [a, b, c] = [pos.getX(i), pos.getY(i), pos.getZ(i)];
-      return [
-        e[0] * a + e[4] * b + e[8] * c + e[12],
-        e[1] * a + e[5] * b + e[9] * c + e[13],
-        e[2] * a + e[6] * b + e[10] * c + e[14],
-      ];
-    };
-    const idx = m.geometry.index;
-    const n = idx ? idx.count : pos.count;
-    for (let k = 0; k + 2 < n; k += 3) {
-      const [A, B, C] = [k, k + 1, k + 2].map((q) => at(idx ? idx.getX(q) : q));
-      // toạ độ trọng tâm của chân đường đứng trong hình chiếu tam giác xuống mặt sàn
-      const d = (B[0] - A[0]) * (C[2] - A[2]) - (C[0] - A[0]) * (B[2] - A[2]);
-      if (Math.abs(d) < 1e-12) continue;
-      const u = ((X - A[0]) * (C[2] - A[2]) - (C[0] - A[0]) * (Z - A[2])) / d;
-      const v = ((B[0] - A[0]) * (Z - A[2]) - (X - A[0]) * (B[2] - A[2])) / d;
-      if (u < 0 || v < 0 || u + v > 1) continue;
-      const y = A[1] + u * (B[1] - A[1]) + v * (C[1] - A[1]);
-      [hi, lo] = [Math.max(hi, y), Math.min(lo, y)];
+function bodyColumns(fig, part) {
+  const CELL = 0.04;
+  const skip = new Set(
+    [
+      fig.arms?.[1]?.shoulder,
+      fig.arms?.[-1]?.shoulder,
+      fig.head,
+      fig.neck,
+      fig.neckCol,
+      part === "lap" ? fig.spine : fig.skirt?.group,
+    ].filter(Boolean),
+  );
+  const seen = new Set();
+  const meshes = [];
+  const walk = (o) => {
+    if (skip.has(o) || seen.has(o) || o.visible === false) return;
+    seen.add(o);
+    const pos = o.isMesh && o.geometry?.attributes?.position;
+    if (pos) {
+      const e = o.matrixWorld.elements;
+      const idx = o.geometry.index;
+      const n = idx ? idx.count : pos.count;
+      const tris = new Float32Array((n - (n % 3)) * 3);
+      // hộp bao mỗi tam giác (x0, y0, z0, x1, y1, z1) và dấu lượt hỏi cho `depthAt`
+      const box = new Float32Array(((n - (n % 3)) / 3) * 6);
+      const grid = new Map();
+      for (let k = 0; k + 2 < n; k += 3) {
+        let [x0, x1, z0, z1] = [Infinity, -Infinity, Infinity, -Infinity];
+        let [y0, y1] = [Infinity, -Infinity];
+        for (let q = 0; q < 3; q++) {
+          const i = idx ? idx.getX(k + q) : k + q;
+          const [a, b, c] = [pos.getX(i), pos.getY(i), pos.getZ(i)];
+          const X = e[0] * a + e[4] * b + e[8] * c + e[12];
+          const Y = e[1] * a + e[5] * b + e[9] * c + e[13];
+          const Z = e[2] * a + e[6] * b + e[10] * c + e[14];
+          tris.set([X, Y, Z], (k + q) * 3);
+          [x0, x1, z0, z1] = [Math.min(x0, X), Math.max(x1, X), Math.min(z0, Z), Math.max(z1, Z)];
+          [y0, y1] = [Math.min(y0, Y), Math.max(y1, Y)];
+        }
+        box.set([x0, y0, z0, x1, y1, z1], (k / 3) * 6);
+        for (let gx = Math.floor(x0 / CELL); gx <= Math.floor(x1 / CELL); gx++)
+          for (let gz = Math.floor(z0 / CELL); gz <= Math.floor(z1 / CELL); gz++) {
+            const key = `${gx},${gz}`;
+            if (!grid.has(key)) grid.set(key, []);
+            grid.get(key).push(k);
+          }
+      }
+      meshes.push({ tris, grid, box, mark: new Uint32Array(box.length / 6) });
     }
-  });
-  return hi > -Infinity ? { top: -hi * 100, bottom: -lo * 100 } : undefined;
+    for (const c of o.children) walk(c);
+  };
+  let asked = 0;
+  if (part === "lap") {
+    walk(fig.root);
+    if (fig.skirt?.group) walk(fig.skirt.group);
+  } else walk(fig.spine);
+  return {
+    spansAt(X, Z) {
+      const key = `${Math.floor(X / CELL)},${Math.floor(Z / CELL)}`;
+      const spans = [];
+      for (const { tris: t, grid } of meshes) {
+        const ks = grid.get(key);
+        if (!ks) continue;
+        const ys = [];
+        for (const k of ks) {
+          const [a, b, c] = [k * 3, k * 3 + 3, k * 3 + 6];
+          // toạ độ trọng tâm của chân đường đứng trong hình chiếu tam giác xuống mặt sàn
+          const d = (t[b] - t[a]) * (t[c + 2] - t[a + 2]) - (t[c] - t[a]) * (t[b + 2] - t[a + 2]);
+          if (Math.abs(d) < 1e-12) continue;
+          const u = ((X - t[a]) * (t[c + 2] - t[a + 2]) - (t[c] - t[a]) * (Z - t[a + 2])) / d;
+          const v = ((t[b] - t[a]) * (Z - t[a + 2]) - (X - t[a]) * (t[b + 2] - t[a + 2])) / d;
+          if (u < 0 || v < 0 || u + v > 1) continue;
+          ys.push(t[a + 1] + u * (t[b + 1] - t[a + 1]) + v * (t[c + 1] - t[a + 1]));
+        }
+        if (!ys.length) continue;
+        // hai tam giác chung cạnh cho cùng một điểm: gộp điểm sát nhau; lẻ điểm (mesh hở) thì lấy cả khúc
+        ys.sort((p, q) => q - p);
+        const hits = ys.filter((y, i) => i === 0 || ys[i - 1] - y > 1e-5);
+        if (hits.length % 2) spans.push([hits[0], hits.at(-1)]);
+        else for (let i = 0; i < hits.length; i += 2) spans.push([hits[i], hits[i + 1]]);
+      }
+      return spans;
+    },
+    /** Khoảng cách (three) từ điểm tới mặt gần nhất trong vòng `r` quanh nó; xa hơn `r` thì trả `r` */
+    depthAt(X, Y, Z, r) {
+      const [gx, gz, n] = [Math.floor(X / CELL), Math.floor(Z / CELL), Math.ceil(r / CELL)];
+      let best = r * r;
+      const q = ++asked;
+      for (const { tris: t, grid, box: b, mark } of meshes)
+        for (let i = gx - n; i <= gx + n; i++)
+          for (let j = gz - n; j <= gz + n; j++)
+            for (const k of grid.get(`${i},${j}`) ?? []) {
+              // mỗi tam giác đo một lần mỗi lượt hỏi; hộp bao đã xa hơn chỗ gần nhất thì bỏ
+              const m = k / 3;
+              if (mark[m] === q) continue;
+              mark[m] = q;
+              const o = m * 6;
+              const dx = Math.max(b[o] - X, 0, X - b[o + 3]);
+              const dy = Math.max(b[o + 1] - Y, 0, Y - b[o + 4]);
+              const dz = Math.max(b[o + 2] - Z, 0, Z - b[o + 5]);
+              if (dx * dx + dy * dy + dz * dz >= best) continue;
+              const d = triDist2(t, k * 3, X, Y, Z);
+              if (d < best) best = d;
+            }
+      return Math.sqrt(best);
+    },
+  };
+}
+
+/** Bình phương khoảng cách từ điểm `(X, Y, Z)` tới tam giác có ba đỉnh liền nhau trong `t` từ chỉ số `o` */
+function triDist2(t, o, X, Y, Z) {
+  const [ax, ay, az] = [t[o], t[o + 1], t[o + 2]];
+  const [bx, by, bz] = [t[o + 3] - ax, t[o + 4] - ay, t[o + 5] - az];
+  const [cx, cy, cz] = [t[o + 6] - ax, t[o + 7] - ay, t[o + 8] - az];
+  const [px, py, pz] = [X - ax, Y - ay, Z - az];
+  const at = (u, v) => {
+    const dx = ax + u * bx + v * cx - X;
+    const dy = ay + u * by + v * cy - Y;
+    const dz = az + u * bz + v * cz - Z;
+    return dx * dx + dy * dy + dz * dz;
+  };
+  // điểm gần nhất (Ericson, Real-Time Collision Detection § 5.1.5): vùng đỉnh, vùng cạnh, trong mặt
+  const d1 = bx * px + by * py + bz * pz;
+  const d2 = cx * px + cy * py + cz * pz;
+  if (d1 <= 0 && d2 <= 0) return at(0, 0);
+  const d3 = d1 - (bx * bx + by * by + bz * bz);
+  const d4 = d2 - (cx * bx + cy * by + cz * bz);
+  if (d3 >= 0 && d4 <= d3) return at(1, 0);
+  const vc = d1 * d4 - d3 * d2;
+  if (vc <= 0 && d1 >= 0 && d3 <= 0) return at(d1 / (d1 - d3), 0);
+  const d5 = d1 - (bx * cx + by * cy + bz * cz);
+  const d6 = d2 - (cx * cx + cy * cy + cz * cz);
+  if (d6 >= 0 && d5 <= d6) return at(0, 1);
+  const vb = d5 * d2 - d1 * d6;
+  if (vb <= 0 && d2 >= 0 && d6 <= 0) return at(0, d2 / (d2 - d6));
+  const va = d3 * d6 - d5 * d4;
+  if (va <= 0 && d4 - d3 >= 0 && d5 - d6 >= 0) {
+    const w = (d4 - d3) / (d4 - d3 + (d5 - d6));
+    return at(1 - w, w);
+  }
+  const den = 1 / (va + vb + vc);
+  return at(vb * den, vc * den);
 }
 
 /** Mục vai trò `role` của các vật `props`: `{ prop, index, role }` */
@@ -4069,88 +4201,458 @@ export async function genBoard(o) {
   plan[plan.length - 1].lean = sitTorso;
   const leanTop = Math.max(...plan.map((p) => p.lean));
 
-  // tay: phía xe đặt lên đùi cùng bên, phía cửa tì đùi rồi tì mặt ngồi
+  // tay do bộ sinh tính (gen-board-arm.mjs): mỗi mốc một khung lòng tay (điểm, hướng lòng tay, hướng ngón) — trên mặt đùi,
+  // vạt áo đo ở người 3D dựng riêng đúng dáng chân, thân của mốc, hay áp cạnh hông, tì mặt ngồi — → cổ tay → khuỷu chọn cho
+  // cả chuỗi → góc tay `[vai, khuỷu, lệch cổ tay, dang, xoắn vai]` và `turn` / `bend` ghi thẳng vào hành động; rig chỉ vẽ lại
   const armOf = (k) => (k === "right" ? "armRight" : "armLeft");
   const lapArm = armOf(innerLeg);
   const restArm = armOf(outerLeg);
   const armStand = { armRight: STAND_ARMS, armLeft: STAND_ARMS };
-  // lòng tay lúc đứng buông tay: tay đi từ đó theo đường thẳng (đích thế giới), khỏi lật khuỷu khi hoà góc sang đích
-  const J0 = rig.actJoints(c, {
-    ...sp0,
-    pose: { ...sp0.pose, ar: STAND_ARMS, al: STAND_ARMS, lr: standL.right, ll: standL.left },
+  const SIDE = { armRight: -1, armLeft: 1 };
+  const toThree = (v) => [v[0] / 100, -v[1] / 100, -v[2] / 100];
+  const flatV = [0, 0, ...rig.fingerVec(rig.HAND_POSES.flat)];
+  /** Dáng của mốc `p` cho người 3D: chân, thân, đầu như mốc ghi; hai tay buông (`STAND_ARMS`), bàn tay duỗi */
+  const armSp = (p) => ({
+    ...p.sp,
+    pose: {
+      ...p.sp.pose,
+      lr: p.legs.right,
+      ll: p.legs.left,
+      torso: p.lean,
+      head: [0, 0, pitchOf(p.tau, p.lean)],
+      ar: STAND_ARMS,
+      al: STAND_ARMS,
+      lift: { ...p.sp.pose.lift, lr: true, ll: true, ar: true, al: true },
+      hand: { ...p.sp.pose.hand, ar: flatV, al: flatV },
+      reach: undefined,
+      aim: undefined,
+    },
+    world: { ...p.sp.world, hands: undefined },
   });
-  const palm0 = (arm) => {
-    const k = arm === "armRight" ? "R" : "L";
-    const d = sub(J0[`wrist${k}`], J0[`elbow${k}`]);
-    return add(J0[`wrist${k}`], mul(d, (50 * rig.HAND_BONES.palm.len * s) / len(d)));
+  // người 3D dựng riêng (không cảnh): mặt trên đùi, vạt áo, váy và lưới bàn tay như three vẽ
+  const R3 = three.none ? null : three.rig;
+  const figs = new Map();
+  const figOf = (sp) => {
+    if (typeof R3?.fromCharacter !== "function") return null;
+    const seated = !!sp.world.seated;
+    const key = JSON.stringify([seated, sp.equip ?? null]);
+    let f = figs.get(key);
+    if (!f) figs.set(key, (f = R3.fromCharacter(rig.equipCharacter(c, sp.equip), { seated })));
+    R3.act(f, sp);
+    f.root.updateMatrixWorld(true);
+    return f;
   };
-  const lapPalm0 = palm0(lapArm);
-  /** Chỗ lòng tay phía xe đặt trên đùi cùng bên (thế giới): giữa hông, gối, nhích lên mặt đùi */
+  /** Đỉnh lưới bàn tay duỗi (`flat`) trong hệ cổ tay, chưa nhân `s` — lấy một lần mỗi bên; `coarse` là bản thưa */
+  const HAND_COARSE = 40;
+  const handPts = new Map();
+  const handLocal = (f, side) => {
+    if (handPts.has(side)) return handPts.get(side);
+    const wrist = f.arms[side].wrist;
+    const geo = f.hands?.[side]?.geo;
+    let mesh = null;
+    wrist.traverse((m) => {
+      if (!mesh && m.isMesh && m.geometry === geo) mesh = m;
+    });
+    const pts = [];
+    if (mesh) {
+      const e = wrist.matrixWorld.clone().invert().multiply(mesh.matrixWorld).elements;
+      const pos = geo.attributes.position;
+      for (let i = 0; i < pos.count; i += 2) {
+        const [a, b, d] = [pos.getX(i), pos.getY(i), pos.getZ(i)];
+        pts.push([
+          e[0] * a + e[4] * b + e[8] * d + e[12],
+          e[1] * a + e[5] * b + e[9] * d + e[13],
+          e[2] * a + e[6] * b + e[10] * d + e[14],
+        ]);
+      }
+    }
+    // thưa cho lúc dò lưới xoay, nghiêng: chừng `HAND_COARSE` đỉnh
+    const k = Math.max(1, Math.ceil(pts.length / HAND_COARSE));
+    const out = { full: pts, coarse: pts.filter((_, i) => i % k === 0) };
+    handPts.set(side, out);
+    return out;
+  };
+  /** Mặt trên đùi, vạt áo, váy của người `f`: các đoạn đặc và độ cao mặt trên cao nhất ở `(X, Z)` (three) */
+  const lapOfFig = (f) => {
+    const cols = bodyColumns(f, "lap");
+    const top = (X, Z) => {
+      let y = -Infinity;
+      for (const [t] of cols.spansAt(X, Z)) y = Math.max(y, t);
+      return Number.isFinite(y) ? y : null;
+    };
+    return { cols, top };
+  };
+  /** Lòng tay úp lên mặt trên ở chỗ `anchor` (three): pháp tuyến theo độ dốc mặt trên quanh đó, ngón theo `along` */
+  const onLap = (lap, anchor, side, along) => {
+    const y0 = lap?.top(anchor[0], anchor[2]);
+    if (y0 == null) return { P: anchor, Rw: handFrame(side, [0, -1, 0], along) };
+    const d = 0.03 * s;
+    const g = (dx, dz) => lap.top(anchor[0] + dx, anchor[2] + dz) ?? y0;
+    const n = unit3([-(g(d, 0) - g(-d, 0)) / (2 * d), 1, -(g(0, d) - g(0, -d)) / (2 * d)]);
+    return { P: [anchor[0], y0, anchor[2]], Rw: handFrame(side, mul3(n, -1), along) };
+  };
+  /** Hướng hệ thân `[tiến, xuống, ra ngoài]` của tay bên `side` qua khung `R` (three) */
+  const bodyDir = (R, side, [f, y, o]) => unit3(mv3(R, [side * o, -y, f]));
+  const thighDir = (p, leg) => {
+    const [L, R] = rig.legs3World(withLegs(p.sp, p.legs).pose, p.sp.world, h, body.hipHalf);
+    const g = leg === "right" ? R : L;
+    return unit3(sub3(toThree(g[1]), toThree(g[0])));
+  };
+  /** Điểm `palm` của bàn tay duỗi trong khung bàn tay (three, đã nhân `s`) */
+  const palmOf = (T, side) =>
+    T.hand ? rig.handPoint("palm", flatV, side, T.hand.k * s, T.hand.long * s) : [0, 0, 0];
+  /** Tay buông như mốc đứng ở dáng của mốc: khung lòng tay đi theo thân */
+  const hangOf = (x, side) => {
+    const A = rig.actArm(c, x.sp, side);
+    return { P: add3(A.W, mv3(A.Rw, palmOf(x.T, side))), Rw: A.Rw };
+  };
+  const blendHand = (a, b, k) =>
+    k <= 0 ? a : k >= 1 ? b : { P: lerp3(a.P, b.P, k), Rw: slerpFrame(a.Rw, b.Rw, k) };
+  /** Chỗ lòng tay phía xe đặt trên đùi cùng bên (thế giới rig): giữa hông, gối */
   const lapOf = (p) => {
     const [L, R] = rig.legs3World(withLegs(p.sp, p.legs).pose, p.sp.world, h, body.hipHalf);
     const g = innerLeg === "right" ? R : L;
-    return add(lerp3(g[0], g[1], LAP.along), [0, -LAP.up * s, 0]);
+    return lerp3(g[0], g[1], LAP.along);
   };
-  // tay phía cửa: chuỗi chỗ đặt (thế giới, đi theo thân), hoà chỗ trước sang chỗ sau quanh mỗi mốc giây trong `HAND_BLEND` s
+  // tay phía cửa: chuỗi chỗ đặt (đi theo thân), hoà chỗ trước sang chỗ sau quanh mỗi mốc giây trong `HAND_BLEND` s
   const restSide = restArm === "armRight" ? "R" : "L";
-  const restPalm0 = palm0(restArm);
+  const rs = SIDE[restArm];
   const markOf = (m) => (p) =>
-    rig.bodyMarkAt(
-      c,
-      { ...p.sp, pose: { ...p.sp.pose, lr: p.legs.right, ll: p.legs.left, torso: p.lean } },
-      m,
-      restSide,
+    toThree(
+      rig.bodyMarkAt(
+        c,
+        { ...p.sp, pose: { ...p.sp.pose, lr: p.legs.right, ll: p.legs.left, torso: p.lean } },
+        m,
+        restSide,
+      ),
     );
+  const onThigh = (p, x) => onLap(x.lap, markOf(OUTER_HAND.thigh)(p), rs, thighDir(p, outerLeg));
   const restSeq = [
-    [0, () => restPalm0, null],
-    [HAND_BLEND, markOf(OUTER_HAND.side), null],
-    [OUTER_HAND.knee * T1, markOf(OUTER_HAND.thigh), null],
-    [OUTER_HAND.seat[0] * T1, markOf(SEAT_HAND), SEAT_HAND.elbow],
-    [T1 + OUTER_HAND.seat[1] * T2, markOf(OUTER_HAND.thigh), null],
+    [0, (p, x) => hangOf(x, rs)],
+    [
+      HAND_BLEND,
+      (p, x) => ({
+        P: markOf(OUTER_HAND.side)(p),
+        Rw: handFrame(
+          rs,
+          bodyDir(x.T.Rs, rs, SIDE_PALM.palm),
+          bodyDir(x.T.Rs, rs, SIDE_PALM.fingers),
+        ),
+      }),
+    ],
+    [OUTER_HAND.knee * T1, onThigh],
+    [
+      OUTER_HAND.seat[0] * T1,
+      (p, x) => ({
+        P: markOf(SEAT_HAND)(p),
+        Rw: handFrame(rs, [0, -1, 0], bodyDir(x.T.Rr, rs, SEAT_HAND.fingers)),
+      }),
+    ],
+    [T1 + OUTER_HAND.seat[1] * T2, onThigh],
   ];
-  const restAt = (p) => {
+  const restAt = (p, x) => {
     let i = 0;
     while (i + 1 < restSeq.length && p.tau >= restSeq[i + 1][0] + HAND_BLEND / 2) i++;
-    const [, f0, e0] = restSeq[i];
+    const a = restSeq[i][1](p, x);
     const next = restSeq[i + 1];
-    if (!next) return { at: f0(p), elbow: e0 };
+    if (!next) return a;
     const k = window01(p.tau, next[0] - HAND_BLEND / 2, next[0] + HAND_BLEND / 2);
-    return { at: k > 0 ? lerp3(f0(p), next[1](p), k) : f0(p), elbow: k < 0.5 ? e0 : next[2] };
+    return k > 0 ? blendHand(a, next[1](p, x), k) : a;
   };
-  /** Lòng tay nâng thêm (rig, lên là `−y`) theo `${i}:${arm}` cho khỏi lún khối váy; đích chưa nâng ghi ở `aimed` */
-  const lift = new Map();
-  const aimed = new Map();
-  const liftAim = (i, arm, P) => {
-    aimed.set(`${i}:${arm}`, P);
-    const l = lift.get(`${i}:${arm}`) ?? 0;
-    return l ? [P[0], P[1] - l, P[2]] : P;
+  /**
+   * Bàn tay cứng ở cổ tay `W`, khung `Rw` lún vào mặt `lap` thì nâng thẳng lên bao nhiêu (three): theo đỉnh lún sâu nhất,
+   * độ sâu thật cộng `clear`, chạm mặt (không quá `graze`) để yên, đo lại tối đa `passes` lượt — `BOARD_LAP`
+   */
+  const [lapClear, lapMax, lapGraze, lapReach] = [
+    BOARD_LAP.clear,
+    BOARD_LAP.max,
+    BOARD_LAP.graze,
+    BOARD_LAP.reach,
+  ].map((v) => (v * s) / 100);
+  const sinkOf = (cols, pts, W, Rw, up, clear) => {
+    let need = 0;
+    for (const l of pts) {
+      const [X, Y0, Z] = add3(W, mul3(mv3(Rw, l), s));
+      const Y = Y0 + up;
+      for (const [top, bottom] of cols.spansAt(X, Z)) {
+        const n = top - Y + clear;
+        if (Y < bottom || n <= 0 || n > lapMax) continue;
+        const d =
+          top - Y <= lapGraze ? top - Y : cols.depthAt(X, Y, Z, Math.min(top - Y, lapReach));
+        if (d > lapGraze) need = Math.max(need, d + clear);
+      }
+    }
+    return need;
   };
-  const keyOf = (p, i) => {
-    const t = +((way === "in" ? p.tau : T - p.tau) / T).toFixed(4);
-    if (i === plan.length - 1) return { ...structuredClone(sitKey), t, ease: "linear" };
-    const stand = i === 0;
+  const liftOf = (x, side, W, Rw, coarse = true) => {
+    if (!x.lap || !x.fig) return 0;
+    const pts = handLocal(x.fig, side)[coarse ? "coarse" : "full"];
+    let up = 0;
+    for (let pass = 0; pass < BOARD_LAP.passes; pass++) {
+      const need = sinkOf(x.lap.cols, pts, W, Rw, up, lapClear);
+      if (need < 1e-4 || up >= lapMax) break;
+      up = Math.min(lapMax, up + need);
+    }
+    return up;
+  };
+  // tay của dáng ngồi nối liền (`gen sit`, đích theo mốc): đo đúng như rig vẽ ở mốc cuối, mốc cuối ghim vào đó, từ
+  // `LAP_UNTIL` của pha rút lòng tay hoà dần sang nó — không để rig tự nội suy từ góc sang đích theo mốc
+  const sitSp = (() => {
+    const act = rig.parseAction({
+      ...placeholder,
+      mask: ["armLeft", "armRight", "legLeft", "legRight", "torso", "head", "hand"],
+      keys: [0, 1].map((t) => ({ ...structuredClone(sitKey), t })),
+    }).data;
+    try {
+      const rt = runtimeOf(
+        parseOr(
+          sceneWith(name, { ...after, action: way === "in" ? "sit-3d" : "stand-3d" }),
+          "dáng ngồi",
+        ),
+        { ...data.actions, [name]: act },
+      );
+      return spAt(rt, tIn(T));
+    } catch (e) {
+      if (e instanceof GenError) throw e;
+      fail(`dáng ngồi không dựng được: ${e.message}`);
+    }
+  })();
+  const ARM_KEYS = ["ar", "al", "reach", "aim", "hand"];
+  const sitArmsOn = (sp) => ({
+    ...sp,
+    pose: {
+      ...sp.pose,
+      ...Object.fromEntries(ARM_KEYS.map((k) => [k, sitSp.pose[k]])),
+      lift: { ...sp.pose.lift, ar: sitSp.pose.lift?.ar, al: sitSp.pose.lift?.al },
+    },
+    world: { ...sp.world, hands: sitSp.world.hands },
+  });
+  const sitHand = (sp, side) => {
+    const A = rig.actArm(c, sp, side);
+    return { P: add3(A.W, mv3(A.Rw, palmOf(rig.trunk3(c, sp), side))), Rw: A.Rw, A };
+  };
+  /**
+   * Lòng tay `H` (khung chưa xoay) lún vào thân trên (vạt áo khoác, bụng lúc cúi) thì dời chỗ đặt ra trước theo hướng thân
+   * cho khỏi: vạt áo gần như dựng đứng nên nâng tay không cứu được
+   */
+  const clearTorso = (x, side, H) => {
+    if (!x.torso || !x.fig) return H.P;
+    const pts = handLocal(x.fig, side).full;
+    const fwd = bodyDir(x.T.Rr, side, [1, 0, 0]);
+    let P = H.P;
+    for (let pass = 0; pass < BOARD_LAP.passes; pass++) {
+      const W = sub3(P, mv3(H.Rw, palmOf(x.T, side)));
+      const need = sinkOf(x.torso, pts, W, H.Rw, 0, lapClear);
+      if (need < 1e-4) break;
+      P = add3(P, mul3(fwd, need));
+    }
+    return P;
+  };
+  // mỗi mốc có tay: khung lòng tay ưu tiên hai bên (lòng tay úp đúng mặt, ngón theo hướng ưu tiên)
+  const handRows = { [lapArm]: [], [restArm]: [] };
+  plan.forEach((p, i) => {
     const v = p.tau / T1;
     const w = (p.tau - T1) / T2;
-    const reach = {};
-    const hand = {};
-    if (!stand && (v <= 1 || w <= LAP_UNTIL)) {
-      const k = window01(v, ...LAP.approach);
-      reach[lapArm] = {
-        at: rig
-          .worldToReach(p.sp.world, lapArm, liftAim(i, lapArm, lerp3(lapPalm0, lapOf(p), k)), h)
-          .map(r1),
-        point: "palm",
-      };
-      hand[lapArm] = { pose: "flat" };
+    if (i === 0 || p.tau < ARM_RAMP - 1e-9) return;
+    const last = i === plan.length - 1;
+    const sp = last ? sitSp : armSp(p);
+    const T3 = rig.trunk3(c, sp);
+    const fig = figOf(sp);
+    const x = {
+      sp,
+      T: T3,
+      fig,
+      lap: fig && lapOfFig(fig),
+      torso: fig && bodyColumns(fig, "torso"),
+    };
+    const toSit = last ? 1 : window01(w, LAP_UNTIL, 1);
+    const hands = {
+      [lapArm]: () =>
+        blendHand(
+          hangOf(x, SIDE[lapArm]),
+          onLap(x.lap, toThree(lapOf(p)), SIDE[lapArm], thighDir(p, innerLeg)),
+          window01(v, ...LAP.approach),
+        ),
+      [restArm]: () => restAt(p, x),
+    };
+    for (const arm of [lapArm, restArm]) {
+      const side = SIDE[arm];
+      const S = toSit > 0 ? sitHand(last ? sp : sitArmsOn(sp), side) : null;
+      const H = toSit >= 1 ? S : toSit > 0 ? blendHand(hands[arm](), S, toSit) : hands[arm]();
+      if (!last) H.P = clearTorso(x, side, H);
+      const row = { i, p, sp, T: T3, side, P: H.P, Rw0: H.Rw, x, t: tOf(p.tau) };
+      // mốc cuối: đúng khuỷu, cổ tay rig vẽ cho dáng ngồi, không nâng, không xoay bàn tay
+      if (last) Object.assign(row, { pin: true, W: S.A.W, E: S.A.E });
+      handRows[arm].push(row);
     }
-    if (!stand && (v <= 1 || w <= LAP_UNTIL)) {
-      const r = restAt(p);
-      reach[restArm] = {
-        at: rig.worldToReach(p.sp.world, restArm, liftAim(i, restArm, r.at), h).map(r1),
-        point: "palm",
-        ...(r.elbow && { elbow: r.elbow }),
+  });
+  // bàn tay xoay quanh pháp tuyến lòng tay (qua điểm lòng tay) và khuỷu chọn cùng nhau, cả chuỗi một lượt
+  // dò hai tầng: lưới thô (`coarse`) đo độ nâng thật, rồi mỗi góc khuỷu chỉnh mịn quanh ô thô rẻ nhất (độ nâng nội suy)
+  const span = (lim, step) => {
+    const out = [];
+    for (let v = -lim; v <= lim + 1e-9; v += step) out.push(v);
+    return out;
+  };
+  const [cy, cg] = BOARD_ARM.coarse;
+  const coarseY = span(BOARD_ARM.yaw, cy);
+  const coarseG = span(BOARD_ARM.tilt, cg);
+  const nearY = span(cy / 2 - 1e-6, BOARD_ARM.yawStep).map((d) => Math.round(d));
+  const nearG = span(cg / 2 - 1e-6, BOARD_ARM.tiltStep).map((d) => Math.round(d));
+  // xoay quanh pháp tuyến lòng tay rồi nghiêng quanh trục ngang lòng tay (cột z khung bàn tay), quanh điểm lòng tay
+  const handAt = (r, yaw, tilt, up) => {
+    if (r.pin) return { Rw: r.Rw0, W: r.W, up: 0 };
+    const R1 = turnFrame(r.Rw0, mv3(r.Rw0, [-r.side, 0, 0]), yaw);
+    const Rw = tilt ? turnFrame(R1, mv3(R1, [0, 0, 1]), tilt) : R1;
+    const W0 = sub3(r.P, mv3(Rw, palmOf(r.T, r.side)));
+    const u = up ?? liftOf(r.x, r.side, W0, Rw);
+    return { Rw, W: add3(W0, [0, u, 0]), up: u };
+  };
+  const stateAt = (r, deg, yaw, tilt, hd = handAt(r, yaw, tilt)) => {
+    const e = elbowAt(r.T, r.side, hd.W, hd.Rw, deg);
+    return {
+      ...e,
+      yaw,
+      tilt,
+      up: hd.up,
+      Rw: hd.Rw,
+      cost: e.cost + BOARD_ARM.yawW * (yaw / 45) ** 2 + BOARD_ARM.tiltW * (tilt / 45) ** 2,
+    };
+  };
+  const armAt = new Map();
+  const armBad = { wrist: [], inward: [], miss: [] };
+  const lifted = [];
+  for (const [arm, rows] of Object.entries(handRows)) {
+    for (const r of rows) {
+      if (r.pin) {
+        r.states = [stateAt(r, poleDeg(r.T, r.side, r.W, r.E), 0, 0)];
+        continue;
+      }
+      const coarse = coarseY.map((y) => coarseG.map((g) => handAt(r, y, g)));
+      // độ nâng ở (y, g) nội suy song tuyến trên lưới thô
+      const upAt = (y, g) => {
+        const fy = Math.min(coarseY.length - 1.000001, (y + BOARD_ARM.yaw) / cy);
+        const fg = Math.min(coarseG.length - 1.000001, (g + BOARD_ARM.tilt) / cg);
+        const [iy, ig] = [Math.floor(fy), Math.floor(fg)];
+        const [u, v] = [fy - iy, fg - ig];
+        const U = (a, b) => coarse[a][b].up;
+        return (
+          (1 - u) * ((1 - v) * U(iy, ig) + v * U(iy, ig + 1)) +
+          u * ((1 - v) * U(iy + 1, ig) + v * U(iy + 1, ig + 1))
+        );
       };
-      hand[restArm] = { pose: "flat" };
+      const fine = new Map();
+      const fineAt = (y, g) => {
+        const key = `${y},${g}`;
+        if (!fine.has(key)) fine.set(key, handAt(r, y, g, upAt(y, g)));
+        return fine.get(key);
+      };
+      r.states = [];
+      for (let deg = -180; deg < 180; deg += BOARD_ARM.step) {
+        let best = null;
+        coarseY.forEach((y, a) =>
+          coarseG.forEach((g, b) => {
+            const st = stateAt(r, deg, y, g, coarse[a][b]);
+            if (!best || st.cost < best.cost) best = st;
+          }),
+        );
+        const [y0, g0] = [best.yaw, best.tilt];
+        for (const dy of nearY)
+          for (const dg of nearG) {
+            const [y, g] = [y0 + dy, g0 + dg];
+            if ((!dy && !dg) || Math.abs(y) > BOARD_ARM.yaw || Math.abs(g) > BOARD_ARM.tilt)
+              continue;
+            const st = stateAt(r, deg, y, g, fineAt(y, g));
+            if (st.cost < best.cost) best = st;
+          }
+        r.states.push(best);
+      }
+    }
+    const chosen = refineChain(rows, pickChain(rows), (r, deg, yaw, tilt) =>
+      stateAt(r, deg, yaw, tilt),
+    );
+    // độ nâng dọc các mốc: nở sang mốc kề rồi lọc [1, 2, 1], tay khỏi nhấp nhô giữa hai mốc; khuỷu tính lại ở độ nâng ấy
+    // độ nâng đo lại bằng đủ đỉnh bàn tay ở cặp xoay, nghiêng đã chọn
+    let L = chosen.map((e, j) => {
+      const r = rows[j];
+      if (r.pin) return 0;
+      const hd = handAt(r, e.yaw, e.tilt, 0);
+      return liftOf(r.x, r.side, hd.W, hd.Rw, false);
+    });
+    L = L.map((u, j) => Math.max(L[j - 1] ?? 0, u, L[j + 1] ?? 0));
+    for (let k = 0; k < BOARD_LAP.smooth; k++)
+      L = L.map((u, j) => ((L[j - 1] ?? u) + 2 * u + (L[j + 1] ?? u)) / 4);
+    let ref = [STAND_ARMS[0], 0];
+    rows.forEach((r, j) => {
+      const [deg, yaw, tilt] = [chosen[j].deg, chosen[j].yaw, chosen[j].tilt];
+      let up = Math.min(Math.max(L[j], chosen[j].up), lapMax);
+      let hd = handAt(r, yaw, tilt, up);
+      let e = stateAt(r, deg, yaw, tilt, hd);
+      // cổ tay còn vượt tầm (không khuỷu, xoay, nghiêng nào cứu được): kẹp góc vào tầm, lòng tay nghiêng theo; khung mới
+      // lún vào đùi thì nâng thêm rồi kẹp lại
+      let cw = clampWrist(e, hd.Rw, r.side);
+      if (cw.off > 0 && !r.pin) {
+        const more = liftOf(r.x, r.side, e.W, cw.Rw, false);
+        if (more > 1e-4 && up < lapMax) {
+          up = Math.min(lapMax, up + more);
+          hd = { ...hd, W: add3(hd.W, [0, up - hd.up, 0]), up };
+          e = stateAt(r, deg, yaw, tilt, hd);
+          cw = clampWrist(e, hd.Rw, r.side);
+        }
+      }
+      r.W = e.W;
+      r.Rw = cw.Rw;
+      if (up > 1e-4) lifted.push(up * 100);
+      const pose = armAngles(r.T, r.side, e.f, cw.w.dev, ref);
+      ref = [pose[0], pose[3]];
+      armAt.set(`${r.i}:${arm}`, {
+        pose: pose.map(r1),
+        hand: { pose: "flat", turn: r1(cw.w.turn), bend: r1(cw.w.bend) },
+        e,
+        r,
+      });
+      if (cw.off > 1) armBad.wrist.push([r.t, arm, cw.off]);
+      if (e.inOver > 0) armBad.inward.push([r.t, arm, e.inward]);
+      if (e.miss * 100 > 1 * s) armBad.miss.push([r.t, arm, e.miss * 100]);
+    });
+  }
+  // còn lún vào thân trên (vạt áo khoác, bụng lúc cúi): báo
+  const torsoSunk = [];
+  if (R3)
+    for (const rows of Object.values(handRows))
+      for (const r of rows) {
+        if (!r.x.torso) continue;
+        const d = sinkOf(r.x.torso, handLocal(r.x.fig, r.side).full, r.W, r.Rw, 0, 0) * 100;
+        if (d > 2 * s) torsoSunk.push([r.t, r.side === -1 ? "armRight" : "armLeft", d]);
+      }
+  const keyOf = (p, i) => {
+    const t = +((way === "in" ? p.tau : T - p.tau) / T).toFixed(4);
+    const stand = i === 0;
+    const arms = {};
+    const hand = {};
+    for (const arm of [lapArm, restArm]) {
+      const a = armAt.get(`${i}:${arm}`);
+      if (!a) continue;
+      arms[arm] = a.pose;
+      hand[arm] = a.hand;
+    }
+    if (i === plan.length - 1) {
+      // dáng ngồi của `gen sit`, tay ghi bằng góc đúng như rig vẽ nó
+      const k = { ...structuredClone(sitKey), t, ease: "linear" };
+      delete k.reach;
+      const sh = sitKey.hand ?? {};
+      for (const arm of Object.keys(arms)) {
+        k.pose[arm] = arms[arm];
+        k.hand = {
+          ...k.hand,
+          [arm]: {
+            pose: sh[arm]?.pose ?? hand[arm].pose,
+            ...(sh[arm]?.w != null && { w: sh[arm].w }),
+            turn: hand[arm].turn,
+            bend: hand[arm].bend,
+          },
+        };
+      }
+      return k;
     }
     return {
       t,
@@ -4160,8 +4662,8 @@ export async function genBoard(o) {
         torso: r1(p.lean),
         head: [0, 0, r1(stand ? 0 : pitchOf(p.tau, p.lean))],
         ...(stand && armStand),
+        ...arms,
       },
-      ...(Object.keys(reach).length && { reach }),
       ...(Object.keys(hand).length && { hand }),
       ease: "linear",
     };
@@ -4170,7 +4672,6 @@ export async function genBoard(o) {
     const ks = plan.map(keyOf).map((k, i) => {
       if (i === 0 || plan[i].tau >= ARM_RAMP - 1e-9) return k;
       const rest = { ...k };
-      delete rest.reach;
       delete rest.hand;
       return rest;
     });
@@ -4211,34 +4712,6 @@ export async function genBoard(o) {
     [name]: a.data,
     ...(way === "in" && { [sitName]: sitRes.action }),
   });
-  // người mặc váy: lòng tay lún khối váy (đo trên người 3D three vẽ, đúng chân, thân của hành động) thì nâng lên mặt trên
-  const lifted = [];
-  if (rig.wornSkirt(c.pieces.hem) && !three.none) {
-    let figsAt;
-    try {
-      figsAt = three.figuresOf(
-        parseOr(next, "sau khi sinh"),
-        runtimeOf(parseOr(next, "sau khi sinh"), actionsWith(action)),
-      );
-    } catch (e) {
-      if (e instanceof GenError) throw e;
-      figsAt = null;
-    }
-    if (figsAt) {
-      for (const [k, P] of aimed) {
-        const i = +k.split(":")[0];
-        const fig = figsAt(at + (way === "in" ? plan[i].tau : T - plan[i].tau))[id];
-        const span = skirtSpan(fig, P[0], P[2]);
-        if (!span || P[1] < span.top - BOARD_SKIRT.clear * s || P[1] > span.bottom) continue;
-        const need = P[1] - (span.top - BOARD_SKIRT.clear * s);
-        if (need <= BOARD_SKIRT.max * s) {
-          lift.set(k, need);
-          lifted.push(need);
-        }
-      }
-      if (lifted.length) action = actionOf();
-    }
-  }
   const actionsA = actionsWith(action);
   let rtA;
   try {
@@ -4371,7 +4844,8 @@ export async function genBoard(o) {
         `nhấc ≤ ${comma(liftMax)}`,
         `nhấc chân ${legName[which === "inner" ? innerLeg : outerLeg]} tới ${comma(liftMax)} vẫn chưa qua ngưỡng`,
       );
-  const groupsB = genGroups(o, ["move", "clash", "held"]);
+  // gen board luôn tự kiểm (move, held; --clash thêm clash): khuỷu nhảy, rung, cổ tay, tầm với chặn ghi
+  const groupsB = genGroups(o, ["move", "clash", "held"]) ?? ["move", "held"];
   if (groupsB)
     for (const side of ["right", "left"])
       core.push(
@@ -4419,7 +4893,23 @@ export async function genBoard(o) {
     ...notes.map((n) => `  ${n}`),
     ...(lifted.length
       ? [
-          `  váy: nâng lòng tay ở ${lifted.length} mốc cho khỏi lún khối váy, tới ${r1(Math.max(...lifted))} (y lên)`,
+          `  lòng tay: nâng ở ${lifted.length} mốc cho khỏi lún vào đùi, váy, tới ${r1(Math.max(...lifted))} (y lên)`,
+        ]
+      : []),
+    `  tay: góc do bộ sinh tính ở ${armAt.size} mốc tay (khuỷu chọn cả chuỗi, rig không giải)`,
+    ...Object.entries({
+      wrist: "cổ tay kẹp ở biên tầm, lòng tay nghiêng khỏi đích (độ)",
+      inward: "khuỷu gập ngược",
+      miss: "cổ tay không với tới đích",
+    })
+      .filter(([k]) => armBad[k].length)
+      .map(
+        ([k, what]) =>
+          `  cảnh báo: ${what} ở ${armBad[k].length} mốc, giây ${r3(Math.min(...armBad[k].map((x) => x[0])))}–${r3(Math.max(...armBad[k].map((x) => x[0])))}, tới ${r1(Math.max(...armBad[k].map((x) => x[2])))}`,
+      ),
+    ...(torsoSunk.length
+      ? [
+          `  cảnh báo: bàn tay còn lún vào thân trên (vạt áo khoác, bụng) ở ${torsoSunk.length} mốc, giây ${r3(Math.min(...torsoSunk.map((x) => x[0])))}–${r3(Math.max(...torsoSunk.map((x) => x[0])))}, sâu tới ${r1(Math.max(...torsoSunk.map((x) => x[2])))} — soi \`pnpm can-tay\``,
         ]
       : []),
     ...(sitRes.ok || !groupsB

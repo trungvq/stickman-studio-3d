@@ -101,6 +101,8 @@ export const OUTER_HAND = {
   side: { to: "hip", offset: [2, 14, 3], point: "palm" },
   thigh: { to: "thigh", offset: [-4, -3, 3], point: "palm" },
 };
+/** Lòng tay áp cạnh hông: lòng tay quay vào thân, ngón chĩa xuống (hệ thân `[tiến, xuống, ra ngoài]` theo thân trên) */
+export const SIDE_PALM = { palm: [0, 0, -1], fingers: [0.2, 1, 0] };
 /** Tay đổi chỗ đặt thì hoà chỗ cũ sang chỗ mới trong chừng này giây quanh mốc đổi */
 export const HAND_BLEND = 0.3;
 /**
@@ -112,12 +114,17 @@ export const LAP = { along: 0.55, up: 9, approach: [0.35, 0.8] };
 /** Hết chỗ nắm, chỗ tì, hai lòng tay đặt trên đùi tới phần này của pha rút rồi hoà về tay của dáng ngồi */
 export const LAP_UNTIL = 0.85;
 /**
- * Người mặc váy, áo dài (`pieces.hem.skirt`): đích lòng tay nằm trong khối váy three vẽ thì nâng lên mặt trên khối, hở
- * `clear`; phải nâng quá `max` (tay ở cạnh dốc của vạt, mặt trên là cạp) thì để nguyên (rig, nhân `s`)
+ * Bàn tay đặt lên đùi, vạt áo, váy (đo trên người 3D dựng riêng ở dáng chân, thân của mốc) mà lưới bàn tay còn lún thì nâng
+ * thẳng lên theo đỉnh lún sâu nhất: độ sâu thật (khoảng tới mặt gần nhất, dò trong `reach`) cộng `clear`; đỉnh sâu không
+ * quá `graze` là chạm mặt nên để yên; đoạn phải nâng quá `max` bỏ qua (tay dưới vạt); đo lại tối đa `passes` lượt (bàn tay
+ * cứng nên không phải dựng lại); xong lọc `[1, 2, 1]` `smooth` lần dọc các mốc của từng tay (rig, nhân `s`)
  */
-export const BOARD_SKIRT = { clear: 1.5, max: 40 };
-/** Lòng tay tì mặt ngồi cạnh hông (mốc `hip`, offset `[tiến, y xuống, ra ngoài]` rig) */
-export const SEAT_HAND = { to: "hip", offset: [2, 12, 8], point: "palm", elbow: [-0.6, 0.8, 0.4] };
+export const BOARD_LAP = { clear: 1, graze: 2, reach: 12, max: 40, passes: 6, smooth: 2 };
+/**
+ * Lòng tay tì mặt ngồi cạnh hông (mốc `hip`, offset `[tiến, y xuống, ra ngoài]` rig): lòng tay úp, ngón chĩa tới trước
+ * chếch ra ngoài (`fingers`, hệ thân theo hướng người)
+ */
+export const SEAT_HAND = { to: "hip", offset: [2, 12, 8], point: "palm", fingers: [1, 0, 0.5] };
 /**
  * Đầu đứng của hành động: chừng này giây đầu (pha hạ chưa bắt đầu, `SIT_PHASE`) các mốc không ghi tay, tay hoà từ góc
  * khớp của mốc đứng sang đích của mốc tay đầu tiên suốt quãng ấy thay vì nhảy trong một mốc
