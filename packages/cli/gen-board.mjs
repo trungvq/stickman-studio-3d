@@ -111,6 +111,11 @@ export const HAND_BLEND = 0.3;
 export const LAP = { along: 0.55, up: 9, approach: [0.35, 0.8] };
 /** Hết chỗ nắm, chỗ tì, hai lòng tay đặt trên đùi tới phần này của pha rút rồi hoà về tay của dáng ngồi */
 export const LAP_UNTIL = 0.85;
+/**
+ * Người mặc váy, áo dài (`pieces.hem.skirt`): đích lòng tay nằm trong khối váy three vẽ thì nâng lên mặt trên khối, hở
+ * `clear`; phải nâng quá `max` (tay ở cạnh dốc của vạt, mặt trên là cạp) thì để nguyên (rig, nhân `s`)
+ */
+export const BOARD_SKIRT = { clear: 1.5, max: 40 };
 /** Lòng tay tì mặt ngồi cạnh hông (mốc `hip`, offset `[tiến, y xuống, ra ngoài]` rig) */
 export const SEAT_HAND = { to: "hip", offset: [2, 12, 8], point: "palm", elbow: [-0.6, 0.8, 0.4] };
 /**

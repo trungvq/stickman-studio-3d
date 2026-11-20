@@ -538,8 +538,13 @@ Chạy trên cảnh đã vá trong bộ nhớ, cùng `gen-check.mjs` của `pour
 | Giật trên hình | M5, `sceneSnaps` | dòng mới so với cảnh trước khi vá; trên sân khấu thử: dòng nào |
 | `check` | `worldChecks`: nhóm `move`, thêm `clash` khi có cảnh three (`stickman.world` của repo, hay `spec` của sân khấu thử — gồm người tự xuyên thân), `held` khi người đang cầm đồ trong quãng; `compareBaseline` so với cảnh trước khi vá | dòng mới hay nặng hơn, trừ bàn chân người đi lún mặt sàn tới `4 · s` (`FOOT_SINK`: đế giày của bước đi chạm sàn — dòng `clash` có `floor`: ở mọi chỗ lấn, mặt gần bàn chân nhất của vật là mặt ngang dưới nó, cách sàn của người không quá `4 · s` — `soleOnFloor` của `lib.mjs`) — dòng chỉ báo; lấn tường, cạnh đồ vẫn chặn |
 
+Mốc dừng luôn đo, kể cả không `--check`: mốc dừng trong quãng vừa sinh mà hông không tới (`sceneSlideProblems`, quá
+`ARRIVE_MAX`) hay trượt qua (`sceneStopProblems`, quá `STOP_PAST`) thì chặn ghi — thường là góc mềm sát mốc dừng: thân quay ở
+trần `TURN_WALK` chưa xong đã phải dừng.
+
 Không đạt thì thoát mã `1`, không ghi, in lý do và gợi ý theo luật trượt: hông tụt ở góc → bo `--radius` hay giảm `--speed`;
-cung gấp → bán kính lớn hơn; khởi hành giật → `--start` và hướng quãng đầu; đi vào đồ → điểm khác.
+cung gấp → bán kính lớn hơn; khởi hành giật → `--start` và hướng quãng đầu; đi vào đồ → điểm khác; hông không tới mốc dừng →
+dời điểm dừng xa góc rẽ trước nó, bo góc ấy, giảm `--speed` hay dừng ở góc rồi quay (`x,z!`).
 
 ### 5.7 Đầu ra
 

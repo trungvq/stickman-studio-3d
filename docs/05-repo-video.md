@@ -862,6 +862,10 @@ ghế hơn (ở trong khi đứng nhìn dọc thân xe), *chân phía cửa* là
   ngồi ở mốc cuối. Mốc đứng ghi góc tay như `stand-3d`; các mốc trong `ARM_RAMP` `0,2 s` đầu (người còn đứng yên) không ghi
   tay, nên tay hoà từ góc khớp sang đích suốt quãng ấy thay vì nhảy trong một mốc. Track một tay chồng trên (khoác túi,
   cầm) vẫn đè tay ấy.
+- *Khối váy*: người mặc váy hay áo vạt dài (`wornSkirt` của `pieces.hem`) thì sau khi soạn, bộ sinh dựng người 3D như three
+  vẽ ở từng mốc tay đặt (đùi, mặt ngồi), cắt đường đứng qua lòng tay với khối váy; lòng tay thấp hơn mặt trên khối quá
+  `BOARD_SKIRT.clear` `1,5 · s` thì nâng lên mặt trên ấy (chỉ khi cần nâng không quá `BOARD_SKIRT.max` `40 · s`, sâu hơn là
+  tay ở dưới vạt, để nguyên). Lệnh in số mốc nâng và mức nâng cao nhất; không cần nâng tay sau khi sinh.
 
 **Tự kiểm** (`--check`) trên cảnh đã vá, mỗi khung trong quãng sinh, chỉ người vào / ra:
 

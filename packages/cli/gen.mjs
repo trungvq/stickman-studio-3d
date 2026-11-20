@@ -26,6 +26,7 @@ import {
   HEAD_CLEAR,
   HEEL_GAP,
   LAP_UNTIL,
+  BOARD_SKIRT,
   LEG_RANGE,
   LAND,
   LAND_REACH,
@@ -287,7 +288,55 @@ async function sceneThree(root, o, scene, data) {
       }
       return cache.get(k);
     },
+    /** Người 3D của cảnh `sc` chạy trên `runtime`: `(t) => { [id]: Figure }`, ma trận thế giới đã cập nhật; `null` khi không dựng được */
+    figuresOf(sc, runtime) {
+      const w = worldScene(world, { id: o.scene, scene: sc, runtime, ...data }, where);
+      if (!w || w.error) return null;
+      return (t) => {
+        const figs = w.scene.pose(t);
+        w.scene.root.updateMatrixWorld(true);
+        return figs;
+      };
+    },
   };
+}
+
+/**
+ * Đường đứng qua điểm sàn `[x, z]` (thế giới rig) cắt khối váy của người 3D `fig` (`fig.skirt.group`, như three vẽ) ở đâu:
+ * `{ top, bottom }` là `y` rig (y xuống) của mặt trên, mặt dưới; không cắt hay không mặc váy thì `undefined`
+ */
+function skirtSpan(fig, x, z) {
+  const group = fig?.skirt?.group;
+  if (!group) return undefined;
+  const [X, Z] = [x / 100, -z / 100];
+  let [hi, lo] = [-Infinity, Infinity];
+  group.traverse((m) => {
+    const pos = m.isMesh && m.geometry?.attributes?.position;
+    if (!pos) return;
+    const e = m.matrixWorld.elements;
+    const at = (i) => {
+      const [a, b, c] = [pos.getX(i), pos.getY(i), pos.getZ(i)];
+      return [
+        e[0] * a + e[4] * b + e[8] * c + e[12],
+        e[1] * a + e[5] * b + e[9] * c + e[13],
+        e[2] * a + e[6] * b + e[10] * c + e[14],
+      ];
+    };
+    const idx = m.geometry.index;
+    const n = idx ? idx.count : pos.count;
+    for (let k = 0; k + 2 < n; k += 3) {
+      const [A, B, C] = [k, k + 1, k + 2].map((q) => at(idx ? idx.getX(q) : q));
+      // toạ độ trọng tâm của chân đường đứng trong hình chiếu tam giác xuống mặt sàn
+      const d = (B[0] - A[0]) * (C[2] - A[2]) - (C[0] - A[0]) * (B[2] - A[2]);
+      if (Math.abs(d) < 1e-12) continue;
+      const u = ((X - A[0]) * (C[2] - A[2]) - (C[0] - A[0]) * (Z - A[2])) / d;
+      const v = ((B[0] - A[0]) * (Z - A[2]) - (X - A[0]) * (B[2] - A[2])) / d;
+      if (u < 0 || v < 0 || u + v > 1) continue;
+      const y = A[1] + u * (B[1] - A[1]) + v * (C[1] - A[1]);
+      [hi, lo] = [Math.max(hi, y), Math.min(lo, y)];
+    }
+  });
+  return hi > -Infinity ? { top: -hi * 100, bottom: -lo * 100 } : undefined;
 }
 
 /** Mục vai trò `role` của các vật `props`: `{ prop, index, role }` */
@@ -2930,6 +2979,23 @@ function stripOf(e, c, duration) {
  * đĩa phải đúng `hash` lúc nạp (`o.hash` của MCP cũng vậy), bản cũ ở `.bak`. Trả `{ ok, scene, path, clips, checks, metrics,
  * strips, hash, wrote, lines, text }`; sai đầu vào, lỗi cấu trúc thì ném `GenError`, file đổi thì `GenConflict`
  */
+/**
+ * Mốc dừng `world.path` của `id` trong `[from, to]` mà hông không tới hay trượt qua — luật của `check` (`sceneSlideProblems`,
+ * `sceneStopProblems`), đo cả khi không `--check`: góc mềm sát mốc dừng thì rig chưa quay xong thân đã phải dừng
+ */
+function stopMisses(rt, id, from, to) {
+  const pick = { ids: [id], window: [from, to] };
+  return [...rig.sceneSlideProblems(rt, pick), ...rig.sceneStopProblems(rt, pick)].filter((m) => {
+    const g = /mốc dừng `world\.path` giây ([\d.]+) — (.*)/.exec(m);
+    return (
+      !!g &&
+      +g[1] >= from - 1e-6 &&
+      +g[1] <= to + 1e-6 &&
+      /hông cách `at`|hông trượt qua mốc/.test(g[2])
+    );
+  });
+}
+
 export async function genWalk(o) {
   const root = resolve(o.dir ?? ".");
   if (!o.scene) fail("thiếu --scene <id cảnh>");
@@ -3165,6 +3231,8 @@ export async function genWalk(o) {
       `cảnh hết ở giây ${r3(rtA.duration)}, cần tới ${r3(until)} — khai \`duration\` cho cảnh, chọn --after dài hơn hay giảm --hold`,
     );
 
+  const missed = stopMisses(rtA, id, at, Math.min(until, rtA.duration));
+
   // tự kiểm (`--check`)
   const groupsW = genGroups(o, ["move", "clash", "held"]);
   const metrics = (() => {
@@ -3192,7 +3260,7 @@ export async function genWalk(o) {
       ...(o.stage && { spec: o.stage.spec, held: o.stage.held }),
     }));
   const ignore = footSink(id, s);
-  const failed = !!groupsW && checkFailed([], world, ignore);
+  const failed = (!!groupsW && checkFailed([], world, ignore)) || missed.length > 0;
   const checks = checkRows(gait, world, ignore);
   const strips = plan.events.map((e) => stripOf(e, c, rtA.duration));
 
@@ -3216,6 +3284,7 @@ export async function genWalk(o) {
     `  path: ${plan.keys.length} mốc (thay ${dropped.length}) · track \`${trackName}\`: ${plan.clips.map((k) => `${k.action} ${k.start}`).join(" → ")}`,
     ...plan.notes.map((n) => `  ${n}`),
     ...plan.warnings.map((w) => `  cảnh báo: ${w}`),
+    ...missed.map((m) => `  lỗi: ${m}`),
     "  tự kiểm:",
     (groupsW ? checkTable(gait, world, ignore) : NO_CHECK)
       .split("\n")
@@ -3232,8 +3301,10 @@ export async function genWalk(o) {
   // ghi
   let wrote = null;
   if (failed && !o.force) {
-    const groups = new Set(world.rows.filter((r) => !ignore(r)).map((r) => r.group));
+    const groups = new Set((world?.rows ?? []).filter((r) => !ignore(r)).map((r) => r.group));
     const hints = [
+      missed.length &&
+        "hông không tới mốc dừng: dời điểm dừng xa góc rẽ trước nó, bo góc ấy bằng --radius, giảm --speed, hay dừng ở góc rồi quay (`x,z!`)",
       groups.has("move") &&
         "giật, trượt: bo góc bằng --radius, giảm --speed, hay đổi --start và hướng quãng đầu",
       groups.has("clash") && "đi vào đồ: chọn điểm khác",
@@ -4046,6 +4117,14 @@ export async function genBoard(o) {
     const k = window01(p.tau, next[0] - HAND_BLEND / 2, next[0] + HAND_BLEND / 2);
     return { at: k > 0 ? lerp3(f0(p), next[1](p), k) : f0(p), elbow: k < 0.5 ? e0 : next[2] };
   };
+  /** Lòng tay nâng thêm (rig, lên là `−y`) theo `${i}:${arm}` cho khỏi lún khối váy; đích chưa nâng ghi ở `aimed` */
+  const lift = new Map();
+  const aimed = new Map();
+  const liftAim = (i, arm, P) => {
+    aimed.set(`${i}:${arm}`, P);
+    const l = lift.get(`${i}:${arm}`) ?? 0;
+    return l ? [P[0], P[1] - l, P[2]] : P;
+  };
   const keyOf = (p, i) => {
     const t = +((way === "in" ? p.tau : T - p.tau) / T).toFixed(4);
     if (i === plan.length - 1) return { ...structuredClone(sitKey), t, ease: "linear" };
@@ -4057,7 +4136,9 @@ export async function genBoard(o) {
     if (!stand && (v <= 1 || w <= LAP_UNTIL)) {
       const k = window01(v, ...LAP.approach);
       reach[lapArm] = {
-        at: rig.worldToReach(p.sp.world, lapArm, lerp3(lapPalm0, lapOf(p), k), h).map(r1),
+        at: rig
+          .worldToReach(p.sp.world, lapArm, liftAim(i, lapArm, lerp3(lapPalm0, lapOf(p), k)), h)
+          .map(r1),
         point: "palm",
       };
       hand[lapArm] = { pose: "flat" };
@@ -4065,7 +4146,7 @@ export async function genBoard(o) {
     if (!stand && (v <= 1 || w <= LAP_UNTIL)) {
       const r = restAt(p);
       reach[restArm] = {
-        at: rig.worldToReach(p.sp.world, restArm, r.at, h).map(r1),
+        at: rig.worldToReach(p.sp.world, restArm, liftAim(i, restArm, r.at), h).map(r1),
         point: "palm",
         ...(r.elbow && { elbow: r.elbow }),
       };
@@ -4085,14 +4166,16 @@ export async function genBoard(o) {
       ease: "linear",
     };
   };
-  let akeys = plan.map(keyOf).map((k, i) => {
-    if (i === 0 || plan[i].tau >= ARM_RAMP - 1e-9) return k;
-    const rest = { ...k };
-    delete rest.reach;
-    delete rest.hand;
-    return rest;
-  });
-  if (way === "out") akeys = akeys.reverse();
+  const keysNow = () => {
+    const ks = plan.map(keyOf).map((k, i) => {
+      if (i === 0 || plan[i].tau >= ARM_RAMP - 1e-9) return k;
+      const rest = { ...k };
+      delete rest.reach;
+      delete rest.hand;
+      return rest;
+    });
+    return way === "out" ? ks.reverse() : ks;
+  };
   const note =
     `${way === "in" ? "Vào" : "Ra khỏi"} chỗ ngồi qua ô cửa, sinh bằng \`stickman gen board\` cho cảnh \`${o.scene}\`, người \`${id}\` từ giây ${at}: ` +
     (way === "in"
@@ -4100,30 +4183,63 @@ export async function genBoard(o) {
       : `từ dáng \`${sitName}\` quay ra phía cửa, chân ${legName[outerLeg]} (phía cửa) đưa ra trước qua ngưỡng đặt xuống nền (${T2} s); thân cúi tới ${r1(leanTop)}°, nhổm dậy, đứng lên ngoài xe, chân ${legName[innerLeg]} theo ra sau cùng (${T1} s); hết thì nối \`stand-3d\`. `) +
     `Tay ${legName[innerLeg]} đặt lên đùi cùng bên, tay ${legName[outerLeg]} tì đùi rồi tì mặt ngồi. Ghi tay, chân, thân, đầu, bàn tay. Nền: \`world.path\` (mốc đứng ngoài ô cửa, mốc \`sit\` mỗi ${BOARD_STEP} s lái hông) và \`world.floor\` sàn trong do chính lệnh ghi vào cảnh ấy; chồng track một tay (cầm), nét mặt lên trên. ` +
     `Ô cửa, ghế, sàn hay người đổi thì sinh lại, không sửa tay.`;
-  const action = rig.parseAction({
-    schemaVersion: rig.ACTION_VERSION,
-    name,
-    duration: r3(T),
-    end: "hold",
-    authoredAt: "side",
-    mask: ["armLeft", "armRight", "legLeft", "legRight", "torso", "head", "hand"],
-    keys: akeys,
-    events: [],
-    note,
-    preview: { stage: way === "in" ? "sit-down" : "stand-up" },
-  });
-  if (!action.success)
-    fail(
-      `hành động sinh ra không qua schema: ${action.error.issues?.[0]?.path?.join(".")}: ${action.error.issues?.[0]?.message}`,
-    );
+  const actionOf = () => {
+    const a = rig.parseAction({
+      schemaVersion: rig.ACTION_VERSION,
+      name,
+      duration: r3(T),
+      end: "hold",
+      authoredAt: "side",
+      mask: ["armLeft", "armRight", "legLeft", "legRight", "torso", "head", "hand"],
+      keys: keysNow(),
+      events: [],
+      note,
+      preview: { stage: way === "in" ? "sit-down" : "stand-up" },
+    });
+    if (!a.success)
+      fail(
+        `hành động sinh ra không qua schema: ${a.error.issues?.[0]?.path?.join(".")}: ${a.error.issues?.[0]?.message}`,
+      );
+    return a;
+  };
+  let action = actionOf();
 
   // cảnh sau khi sinh, tự kiểm
   const next = sceneWith(name, after);
-  const actionsA = {
+  const actionsWith = (a) => ({
     ...data.actions,
-    [name]: action.data,
+    [name]: a.data,
     ...(way === "in" && { [sitName]: sitRes.action }),
-  };
+  });
+  // người mặc váy: lòng tay lún khối váy (đo trên người 3D three vẽ, đúng chân, thân của hành động) thì nâng lên mặt trên
+  const lifted = [];
+  if (rig.wornSkirt(c.pieces.hem) && !three.none) {
+    let figsAt;
+    try {
+      figsAt = three.figuresOf(
+        parseOr(next, "sau khi sinh"),
+        runtimeOf(parseOr(next, "sau khi sinh"), actionsWith(action)),
+      );
+    } catch (e) {
+      if (e instanceof GenError) throw e;
+      figsAt = null;
+    }
+    if (figsAt) {
+      for (const [k, P] of aimed) {
+        const i = +k.split(":")[0];
+        const fig = figsAt(at + (way === "in" ? plan[i].tau : T - plan[i].tau))[id];
+        const span = skirtSpan(fig, P[0], P[2]);
+        if (!span || P[1] < span.top - BOARD_SKIRT.clear * s || P[1] > span.bottom) continue;
+        const need = P[1] - (span.top - BOARD_SKIRT.clear * s);
+        if (need <= BOARD_SKIRT.max * s) {
+          lift.set(k, need);
+          lifted.push(need);
+        }
+      }
+      if (lifted.length) action = actionOf();
+    }
+  }
+  const actionsA = actionsWith(action);
   let rtA;
   try {
     rtA = runtimeOf(parseOr(next, "sau khi sinh"), actionsA);
@@ -4301,6 +4417,11 @@ export async function genBoard(o) {
       .filter(Boolean)
       .map((l) => `  ${l}`),
     ...notes.map((n) => `  ${n}`),
+    ...(lifted.length
+      ? [
+          `  váy: nâng lòng tay ở ${lifted.length} mốc cho khỏi lún khối váy, tới ${r1(Math.max(...lifted))} (y lên)`,
+        ]
+      : []),
     ...(sitRes.ok || !groupsB
       ? []
       : [

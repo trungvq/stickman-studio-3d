@@ -95,7 +95,8 @@ const USAGE = `stickman <lệnh> [thư mục]
                 (mặc định sample-man) --angle front|near|far|side|back --out <png> (mặc định
                 tmp/gen/sit-sheet.png) --size <cỡ ô> --cols <số cột> --software
                 walk: đi qua các điểm sàn, ghi mốc world.path và clip đi / đứng của một track vào
-                scenes/<id>.json (vá JSON thô, bản cũ ở .bak), thay phần từ --at trở đi
+                scenes/<id>.json (vá JSON thô, bản cũ ở .bak), thay phần từ --at trở đi; luôn đo mốc dừng:
+                hông không tới hay trượt qua mốc dừng mới thì không ghi
                 --to "<x,z> …" (x,z mốc giữa đường — rẽ khi đang đi; x,z! dừng, quay tới hướng quãng sau
                 rồi đi; x,z!yaw ở điểm cuối: dừng rồi quay tới yaw) --at <giây | @mốc±s> (bắt buộc khi
                 người đã có path) --start rest|moving (mặc định rest) --speed <đơn vị/s> (mặc định tốc
