@@ -142,6 +142,8 @@ export function handRadius(r: HandRow, center: THREE.Vector3): number {
   return rad;
 }
 
+const RAY_CAMERA = new THREE.PerspectiveCamera();
+
 /** Khoảng trống từ `c` theo `dir` tới lưới đầu tiên đang hiện của `world` (bỏ phần trong `near`); không chạm là `far` */
 function clearance(
   world: THREE.Object3D,
@@ -151,6 +153,8 @@ function clearance(
   far: number,
 ) {
   const ray = new THREE.Raycaster(c, dir, near, far);
+  // `Sprite.raycast` đọc `raycaster.camera`; tia này không từ camera nào, chỉ lấy lưới, nên camera nào cũng được
+  ray.camera = RAY_CAMERA;
   for (const h of ray.intersectObject(world, true))
     if ((h.object as THREE.Mesh).isMesh && !h.object.userData.noCollide && shown(h.object))
       return h.distance;

@@ -717,9 +717,10 @@ function seedFree() {
   free.fov = cam.fov;
   free.updateProjectionMatrix();
   const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion);
-  const hit = new THREE.Raycaster(cam.position, dir)
-    .intersectObject(w.root, true)
-    .find((h) => shown(h.object));
+  const ray = new THREE.Raycaster(cam.position, dir);
+  // `Sprite.raycast` đọc `raycaster.camera`: thiếu thì cảnh có sprite (vệt đèn, nhãn) lỗi khi nạp
+  ray.camera = cam;
+  const hit = ray.intersectObject(w.root, true).find((h) => shown(h.object));
   orbit.target.copy(cam.position).addScaledVector(dir, hit ? hit.distance : 3);
   orbit.update();
 }
