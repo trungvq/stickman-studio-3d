@@ -2202,7 +2202,8 @@ export async function deepContext({ dir, names, actions, heldItems, bare, ...opt
  * chưa ghi đĩa (đã `parseAction`) theo tên, đè lên hai lớp; `held`: món cầm tay đã `parseHeldItem` theo tên, đè mọi
  * lớp của `held/` (file cùng tên không đọc). Ngưỡng đọc từ `package.json` như `check`. Chạy trong tiến trình gọi (không
  * luồng phụ). Trả `Map` id → dòng báo `{ group, msg, measure?, key?, t?, error?, floor? }` (`t` giây đầu quãng, `floor`
- * là mọi chỗ của dòng `clash` là bàn chân lún mặt sàn — `soleOnFloor`), `msg` và `key` không có tiền tố file
+ * là mọi chỗ của dòng `clash` là bàn chân lún mặt sàn — `soleOnFloor`), `msg` và `key` không có tiền tố file. `narrow`
+ * `{ ids?, from?, to? }` thu mọi cảnh về những người ấy, quãng ấy như `check --cast --from --to` (docs/05 § Đo hẹp)
  */
 export async function checkScenes({
   dir = ".",
@@ -2211,6 +2212,7 @@ export async function checkScenes({
   spec,
   actions,
   held,
+  narrow,
 }) {
   const root = resolve(dir);
   const [tol, ratio, self] = [clashTol(root), itemRatio(root), selfTol(root)];
@@ -2234,6 +2236,7 @@ export async function checkScenes({
     if (r.success) ctx.scenesByName[id] = r.data;
     else out.set(id, [{ group: "ref", msg: `scene hỏng: ${r.error.issues?.[0]?.message}` }]);
   }
+  if (narrow) ctx.narrow = Object.fromEntries(Object.keys(scenes).map((id) => [id, narrow]));
   const base = ctx.world;
   if (spec && base?.rig)
     ctx.world = {
@@ -2405,13 +2408,13 @@ export const CLI_FLAGS = {
   "migrate-elbow": { bool: ["dry-run"], value: ["scene"] },
   studio: { bool: [], value: ["port", "host"] },
   gen: {
-    bool: ["force", "dry-run", "sheet", "software"],
+    bool: ["force", "dry-run", "sheet", "software", "check", "clash"],
     value: [
       ...["scene", "cast", "at", "name", "cup", "style", "tilt", "pour-dir", "item"],
       ...["legs", "tuck", "feet", "back", "hands", "elbow", "top"],
       ...["table", "armrest", "backrest", "footrest"],
       ...["to", "speed", "action", "start", "radius", "turn-time", "turn-side", "hold", "track"],
-      ...["after", "blend", "way", "door", "ground"],
+      ...["after", "blend", "way", "door", "ground", "time"],
       ...[
         "seat",
         "depth",

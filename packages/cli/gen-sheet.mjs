@@ -144,6 +144,9 @@ export async function sitSheetCells(o = {}, onCell) {
     try {
       const r = await GEN_KINDS.sit.run({
         ...page.call(p, stage),
+        // tờ thử là để xem từng ô đạt hay không: luôn tự kiểm (đo hẹp); clash theo cờ --clash
+        check: true,
+        clash: !!o.clash,
         dir: root,
         name: `sit-xem-thu-${i}`,
         stage: stageRun(stage),

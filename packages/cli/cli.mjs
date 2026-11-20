@@ -65,9 +65,10 @@ const USAGE = `stickman <lệnh> [thư mục]
                 RAM trống)
   retime        đo lại tiếng rồi ghi số vào cue khai \`after\` và mốc khai ở \`shot.marks\`;
                 --mark <cảnh>:<tên>=<giây> đặt tay một mốc
-  gen <kiểu>    sinh một hành động cho đúng một cảnh từ chỗ người và đồ trong cảnh, tự kiểm trên
-                chính cảnh ấy (cổ tay, tầm với, khuỷu một chiều, điểm tiếp xúc, check move/clash/held/
-                roles) rồi mới ghi actions/; không đạt thì báo lỗi, không ghi. Kiểu: pour (rót), sit (ngồi),
+  gen <kiểu>    sinh một hành động cho đúng một cảnh từ chỗ người và đồ trong cảnh rồi ghi; mặc định
+                không kiểm gì. --check: tự kiểm (cổ tay, tầm với, khuỷu một chiều, điểm tiếp xúc, check
+                move/held/roles) chỉ trên người được sinh, chỉ quãng vừa sinh, không đạt thì báo lỗi, không
+                ghi; --clash (kèm --check) thêm nhóm clash. Kiểu: pour (rót), sit (ngồi),
                 walk (đi: ghi path và clip vào scenes/), board (vào, ra chỗ ngồi qua ô cửa: ghi path, clip).
                 Đồ của cảnh tìm theo vai trò (Item.roles, withRoles); bảng vai trò cần: gen <kiểu> --help
                 chung: --scene <id> --cast <người> --at <giây bắt đầu> --name <tên file> --force (ghi dù
@@ -108,7 +109,7 @@ const USAGE = `stickman <lệnh> [thư mục]
                 .bak), hành động board-<way>-<cảnh>-<người>-3d vào actions/ (vào: kèm sit-<cảnh>-<người>-3d)
                 --way in|out (bắt buộc) --at <giây | @mốc±s> (vào: người đứng sẵn ở chỗ, hướng lệnh báo; ra:
                 người đang ngồi) --door <vật | vật#mục | x,z,y ngưỡng,y khung trên> --seat <vật | vật#mục>
-                --ground <y nền ngoài> --track <tên> --legs/--back/--hands/--feet… (cờ gen sit của dáng ngồi)
+                --ground <y nền ngoài> --time <giây hạ>,<giây rút> (mặc định 1,0,8) --track <tên> --legs/--back/--hands/--feet… (cờ gen sit của dáng ngồi)
   migrate-held  chuyển món bản 1 (kiểu cầm khai theo món) sang v2 và \`hold\` \`món#kiểu\` của cảnh sang chỗ cầm nhóm
                 \`{ item, group, … }\` (tay dẫn), chỗ cầm gần liên kết cũ nhất; in bảng lệch từng lần cầm.
                 --scene <regex> chỉ cảnh có id khớp
@@ -330,6 +331,7 @@ else if (parsed.error) {
             size: value("size"),
             cols: value("cols"),
             software: flag("software"),
+            clash: flag("clash"),
           },
           (line) => console.error(line),
         );
@@ -379,6 +381,9 @@ else if (parsed.error) {
         door: value("door"),
         seat: value("seat"),
         ground: value("ground"),
+        time: value("time"),
+        check: flag("check"),
+        clash: flag("clash"),
         force: flag("force"),
         dryRun: flag("dry-run"),
       });

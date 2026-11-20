@@ -51,14 +51,20 @@ import {
 import {
   GEN_KINDS,
   GenError,
-  genBoard,
-  genPour,
-  genSit,
+  genBoard as genBoard0,
+  genPour as genPour0,
+  genSit as genSit0,
   SIT_SELF_PIERCE,
   sitHints,
   sitSoftRow,
   stageRun,
 } from "./gen.mjs";
+
+// bộ sinh mặc định không kiểm: test đo cả tự kiểm, kể cả clash
+const ALL = { check: true, clash: true };
+const genBoard = (o) => genBoard0({ ...ALL, ...o });
+const genPour = (o) => genPour0({ ...ALL, ...o });
+const genSit = (o) => genSit0({ ...ALL, ...o });
 import { castRuntime, worldData } from "./lib.mjs";
 
 const AT = 1;

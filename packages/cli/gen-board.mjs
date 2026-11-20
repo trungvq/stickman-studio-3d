@@ -10,7 +10,7 @@ const r1 = (v) => Math.round(v * 10) / 10;
  * ngồi; rút — đã ngồi, chân phía cửa nhấc qua ngưỡng vào trong, thân quay về hướng ghế, hông trượt vào chỗ ngồi. Ra xe
  * là hai pha ấy chạy ngược
  */
-export const BOARD_TIME = { sit: 1.6, swing: 1.2 };
+export const BOARD_TIME = { sit: 1.0, swing: 0.8 };
 /** Mốc `path` cách nhau ngần này giây; mốc hành động dày gấp đôi */
 export const BOARD_STEP = 0.1;
 /**
@@ -77,22 +77,19 @@ export const SHUFFLE_LIFT = 5;
 export const LIFT_MAX = 90;
 /** Mức nhấc đổi tối đa ngần này giữa hai mốc hành động kề nhau (rig, nhân `h · s`) */
 export const LIFT_RATE = 6;
-/** Thân cúi (độ): `peak` ở pha hạ, thêm tới `max` khi đầu chưa lọt khung trên; đầu cúi thêm `head` phần thân cúi */
-export const BOARD_LEAN = { peak: 28, max: 50, head: 0.4 };
 /**
- * Tay phía xe nắm mép khung trên: tâm nắm dời khỏi điểm của `head` ở chỗ hông đáp `[dọc theo hướng ghế, ra ngoài, xuống]`
- * (rig, nhân `s`). Tay đi thẳng từ lòng tay lúc đứng tới đó trong quãng `approach` của pha hạ, khai khuỷu ra ngoài, xuống
- * (`elbow`) từ phần `elbowFrom` của quãng ấy; buông trước khi hông đáp, xuống đùi (`LAP`) trong quãng `release` của pha
- * hạ, khuỷu giữ hướng ấy. Vai cách chỗ nắm quá `reach` lần chiều dài tay ở mốc nào từ lúc nắm tới lúc buông thì lòng tay ấy
- * đặt lên đùi thay cho nắm khung
+ * Thân cúi (độ): `peak` ở pha hạ, đổi trong 0…`max` (lưới `step`) khi đầu chưa lọt khung trên; đầu cúi thêm `head` phần thân
+ * cúi. Cả chuỗi chọn một lượt: phạt bình phương lệch nền, `smooth` × bình phương tốc độ đổi (độ/s; căn của nó ~ thời hằng làm
+ * mượt, giây), `miss` mỗi mốc đầu lấn khung trên, `margin` × bình phương phần hở còn thiếu so với `HEAD_CLEAR` (rig, chia `s`)
  */
-export const DOOR_GRIP = {
-  offset: [14, 4, 5],
-  approach: [0.13, 0.45],
-  elbowFrom: 0.25,
-  elbow: [0.2, 0.6, 1],
-  release: [0.72, 0.97],
-  reach: 0.97,
+export const BOARD_LEAN = {
+  peak: 28,
+  max: 50,
+  step: 1,
+  head: 0.4,
+  smooth: 0.02,
+  miss: 1e4,
+  margin: 2,
 };
 /**
  * Tay phía cửa: lòng tay áp cạnh hông (`side`) từ đầu pha hạ, tì đùi từ phần `knee` pha hạ, tì mặt ngồi cạnh hông
@@ -107,8 +104,9 @@ export const OUTER_HAND = {
 /** Tay đổi chỗ đặt thì hoà chỗ cũ sang chỗ mới trong chừng này giây quanh mốc đổi */
 export const HAND_BLEND = 0.3;
 /**
- * Lòng tay phía xe trên đùi cùng bên: phần `along` từ khớp hông tới gối, nhích lên `up` (rig, nhân `s`); chỗ buông khung,
- * hay chỗ đặt suốt lượt khi vai không với tới khung trên (tay tới đó trong quãng `approach` của pha hạ)
+ * Tay phía xe đặt lòng tay lên đùi cùng bên suốt lượt, không nắm khung trên (người đang quay lưng vào xe thì chỗ nắm ở sau
+ * đầu, tay phải quặt ra sau): phần `along` từ khớp hông tới gối, nhích lên `up` (rig, nhân `s`), tay tới đó trong quãng
+ * `approach` của pha hạ
  */
 export const LAP = { along: 0.55, up: 9, approach: [0.35, 0.8] };
 /** Hết chỗ nắm, chỗ tì, hai lòng tay đặt trên đùi tới phần này của pha rút rồi hoà về tay của dáng ngồi */

@@ -4,7 +4,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import * as rig from "@stickman3d/rig/core";
-import { GEN_KINDS, GenConflict, GenError, footSink, genWalk, stageRun } from "./gen.mjs";
+import {
+  GEN_KINDS,
+  GenConflict,
+  GenError,
+  footSink,
+  genWalk as genWalk0,
+  stageRun,
+} from "./gen.mjs";
+
+// bộ sinh mặc định không kiểm: test đo cả tự kiểm, kể cả clash
+const genWalk = (o) => genWalk0({ check: true, clash: true, ...o });
 import { parsePoints, planWalk } from "./gen-walk.mjs";
 import * as R3 from "@stickman3d/rig";
 import { castRuntime, soleOnFloor, worldData } from "./lib.mjs";

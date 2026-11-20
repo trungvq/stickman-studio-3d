@@ -15,9 +15,20 @@ import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import * as rig from "@stickman3d/rig/core";
 import { GEN_PAGES, paramProblems } from "./gen-pages.mjs";
-import { GEN_KINDS, genPour, genSit, slotTable, stageRun, virtualEntries } from "./gen.mjs";
+import {
+  GEN_KINDS,
+  genPour as genPour0,
+  genSit as genSit0,
+  slotTable,
+  stageRun,
+  virtualEntries,
+} from "./gen.mjs";
 import { POUR_STYLES } from "./gen-pour.mjs";
 import { checkScenes, checkWorkspace, worldData } from "./lib.mjs";
+
+// bộ sinh mặc định không kiểm: test đo cả tự kiểm, kể cả clash
+const genPour = (o) => genPour0({ check: true, clash: true, ...o });
+const genSit = (o) => genSit0({ check: true, clash: true, ...o });
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const RIG = resolve(HERE, "../rig");

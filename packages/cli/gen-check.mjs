@@ -228,7 +228,7 @@ export function restChecks({ window, step = GEN_STEP, rest = [], clear = [] }) {
  * hành động, hành động chưa ghi đĩa đưa ở `actions`) và cảnh `before` (chưa có), chỉ giữ dòng mới hay nặng hơn
  * (`compareBaseline`), dòng mang `t` (giây đầu quãng) khi đo được. Không có `stickman.world` thì chỉ còn nhóm `move`. Sân
  * khấu thử (`o.stage` của bộ sinh): `spec` dựng cảnh three thay `worldOf` của repo, `held` đè món của `held/` — như
- * `checkScenes`. Trả `{ rows, total }`
+ * `checkScenes`; `narrow` `{ ids, from, to }` chỉ đo những người ấy, quãng ấy. Trả `{ rows, total }`
  */
 export async function worldChecks({
   dir,
@@ -238,12 +238,14 @@ export async function worldChecks({
   groups = ["move", "clash", "held", "roles"],
   spec,
   held,
+  narrow,
 }) {
   const res = await checkScenes({
     dir,
     scenes: { "gen-truoc": before, "gen-sau": after },
     groups,
     actions,
+    ...(narrow && { narrow }),
     ...(spec && { spec }),
     ...(held && { held }),
   });
@@ -265,7 +267,7 @@ export async function worldChecks({
     const delta = cmp.fresh.has(r.key) ? "mới" : cmp.worse.has(r.key) ? "nặng hơn" : null;
     if (delta && !rows.some((x) => x.key === r.key)) rows.push({ ...r, delta });
   }
-  return { rows, total: now.length };
+  return { rows, total: now.length, groups };
 }
 
 /** Có dòng lỗi không: phần lõi `lỗi`, hay dòng `check` mới / nặng hơn (trừ khoá bị `ignore`) */
@@ -324,7 +326,7 @@ export function checkRows(core, world, ignore = () => false) {
     const soft = world.rows.filter((r) => ignore(r));
     rows.push({
       rule: "check",
-      label: "check move/clash/held/roles",
+      label: `check ${(world.groups ?? ["move", "clash", "held", "roles"]).join("/")}`,
       level: bad.length ? "lỗi" : "ok",
       msg: bad.length
         ? `${bad.length} dòng mới hay nặng hơn`

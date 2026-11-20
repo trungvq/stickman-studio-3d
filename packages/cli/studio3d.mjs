@@ -210,6 +210,8 @@ export async function genRun(root, { kind, params = {}, who } = {}) {
     const st = k.page.stage(params, { name: who, character, actions: actionData(root) });
     const r = await k.run({
       ...k.page.call(params, st),
+      // trang thử hiện bảng tự kiểm: luôn kiểm (đo hẹp), không clash
+      check: true,
       dir: root,
       stage: gen.stageRun(st),
       dryRun: true,
