@@ -33,7 +33,7 @@ ba. `hairline` ở `core/sculpt.ts`; người 3D dựng lưới bằng `sculptMe
 | `bangTo` | −50 | Kinh độ chỗ mái lệch rủ sâu nhất |
 | `bangThick` | 0.1 | Bề dày mép mái lệch, lần bán kính sọ |
 | `length` | 0 | Đuôi tóc dưới tâm đầu bấy nhiêu lần bán kính, đo theo trọng lực; `0` là tóc không rủ |
-| `style` | `plain` | Kiểu: `plain` vỏ trơn, `neat` chải gọn có rãnh ngôi và lọn chải, `spiky` mọc gai và mái răng cưa, `round` mái bằng khối tròn phồng, `center` ngôi giữa mái rẽ hai bên, `bob` đuôi cụp, `shoulder` ngang vai gợn sóng, `slick` trán cao vuốt ngược, `curly` xoăn búp, `bald` hói đỉnh chỉ còn vành tóc, `pony` đuôi ngựa, `bun` búi, `messy` ngắn xù mái răng cưa đuôi so le, `afro` xoăn bồng ôm cả đầu, `buzz` đầu đinh sát da, `crop` tròn ngắn có lọn xoáy, `quiff` mái dựng vuốt ngược, `anime` lọn dẹt nhọn chảy từ xoáy; hình của kiểu ở bảng `SCULPT_STYLES` |
+| `style` | `plain` | Kiểu: `plain` vỏ trơn, `neat` chải gọn có rãnh ngôi và lọn chải, `spiky` lọn lá dày toả từ xoáy và mái răng cưa, `round` mái bằng khối tròn phồng, `center` ngôi giữa mái rẽ hai bên, `bob` đuôi cụp, `shoulder` ngang vai gợn sóng, `slick` trán cao vuốt ngược, `curly` xoăn búp, `bald` hói đỉnh chỉ còn vành tóc, `pony` đuôi ngựa, `bun` búi, `messy` ngắn xù mái răng cưa đuôi so le, `afro` xoăn bồng ôm cả đầu, `buzz` đầu đinh sát da, `crop` tròn ngắn có lọn xoáy, `quiff` mái dựng vuốt ngược, `anime` lọn dẹt nhọn chảy từ xoáy; hình của kiểu ở bảng `SCULPT_STYLES` |
 | `spike` | 1 | Hệ số nhân chiều dài gai, lọn vuốt và lọn dẹt của kiểu; `0` tắt cả ba |
 | `crownSide` / `crownBack` | 22 / 32 | Kiểu hói: vĩ độ mép trên vành tóc ở hai bên, sau gáy |
 | `crownFrom` / `crownEase` | 80 / 12 | Kiểu hói: kinh độ mũi trước của vành, và số độ kinh từ mũi tới chỗ vành mở hết bề cao |
@@ -214,14 +214,29 @@ bề rộng lọn phải chia hết 360 để gáy không lệch.
 ### Tóc gai
 
 Vị trí lọn là **bản sắc của kiểu**, không nằm trong JSON: `SCULPT_STYLES[style]` là bảng
-lọn hard code, mỗi lọn ghi kinh độ, vĩ độ chân, chiều dài tính từ vỏ (lần bán kính), hướng
-ngả trên mặt sọ (`0` lên đỉnh, `90` về `+kinh độ`, `180` xuống chân tóc), góc ngả khỏi pháp
-tuyến và bề rộng chân. JSON chỉ chọn `style` và nhân chiều dài bằng `spike`.
+lọn hard code. JSON chỉ chọn `style` và nhân chiều dài bằng `spike`.
 
-Mỗi lọn là một **khối riêng**, không phải chỗ vỏ bị đẩy lên: ống dẹt thon tới mũi, trục
-là Bézier bậc hai rời chân theo pháp tuyến rồi cong về hướng ngả. Chân chìm dưới mặt vỏ.
-Vỏ của kiểu gai vẫn trơn —
-đẩy vỏ theo gai gần nhất làm hướng đẩy nhảy cóc giữa hai gai, ô gập ngược và thủng lỗ.
+**Gai** (`spikes`) là lọn đứng: mỗi lọn ghi kinh độ, vĩ độ chân, chiều dài tính từ vỏ (lần bán
+kính), hướng ngả trên mặt sọ (`0` lên đỉnh, `90` về `+kinh độ`, `180` xuống chân tóc), góc ngả
+khỏi pháp tuyến và bề rộng chân. Mỗi lọn là một **khối riêng**, không phải chỗ vỏ bị đẩy lên:
+ống dẹt thon tới mũi, trục là Bézier bậc hai rời chân theo pháp tuyến rồi cong về hướng ngả.
+Chân chìm dưới mặt vỏ. Vỏ vẫn trơn — đẩy vỏ theo gai gần nhất làm hướng đẩy nhảy cóc giữa hai
+gai, ô gập ngược và thủng lỗ. Gai rời vỏ theo pháp tuyến nên dựng đứng: nhiều gai mảnh rải
+quanh đầu thành quả chôm chôm, nhìn từ sau thành sừng trên đỉnh. Chỉ dùng cho vài lọn vểnh
+ngắn (`messy`).
+
+Kiểu `spiky` không dùng gai mà dùng **lọn lá**: [lọn dẹt](#tóc-anime) dày, toả từ xoáy sau
+đỉnh (khoảng kinh độ 150, vĩ độ 80) xuống mọi phía, ngọn hất khỏi vỏ thành mũi nhọn. Bảng
+`SCULPT_STYLES.spiky`:
+
+- `locksFrom: "front"`: kinh độ và hướng của lọn đo từ giữa trán như ngôi ở `0`, không theo
+  `part` — kiểu gai không có ngôi, đổi `part` không xoay bộ lọn.
+- `lockShape: [0.7, 0.45]`: lọn dày bằng 0.7 bề rộng (lọn dẹt mặc định 0.3) nên đọc thành lá
+  mập; chân thắt còn 0.55 bề rộng rồi phình đủ ở 35% chiều dài.
+- 53 lọn dài tới 44°, nửa bề rộng 0.16–0.19. Lọn hất (`lift`) tới 0.42 ở đỉnh và trên vành
+  đầu, sườn trước tai hất ít (≤ 0.2) và dừng ngang mắt để không thành chùm rủ cạnh mặt; gáy
+  có lớp lọn thấp ngọn quá chân tóc, hất 0.14–0.34.
+- Không `puff`: lọn hất làm đầu to ra rồi, vỏ phồng thêm là đầu to gấp rưỡi.
 
 Kiểu có `jag` thì mái là **răng cưa**: mỗi lọn một mũi nhọn chĩa xuống ở kinh độ của
 bảng, sâu `fringe` × độ sâu của lọn, cạnh lõm vào nên hai lọn kề nhau gặp nhau thành vòm
@@ -243,7 +258,8 @@ Như lọn vuốt, đổi dấu `part` là lật gương cả lọn.
 - Trục lọn đi theo cung lớn trên sọ, nằm sát mặt vỏ; qua khỏi chân tóc thì nằm trên da,
   nên mái là lọn rủ đè lên trán chứ không phải chân tóc hạ xuống. Chân chìm dưới vỏ.
 - Tiết diện dẹt theo pháp tuyến sọ, dày `0.3` bề rộng; bề rộng giữ gần đủ tới hai phần ba
-  rồi thon nhọn. Mép lọn có nét nhờ độ sâu gãy và cạnh gấp ở hậu kỳ.
+  rồi thon nhọn. Bảng kiểu khai `lockShape: [thick, leaf]` thì dày `thick` bề rộng, và chân thắt
+  còn `1 − leaf` bề rộng rồi phình đủ ở 35% chiều dài (lọn lá của `spiky`). Mép lọn có nét nhờ độ sâu gãy và cạnh gấp ở hậu kỳ.
 - Chân lọn chìm dưới vỏ rồi trồi lên dần trong `rise` phần chiều dài đầu (mặc định 0.35):
   trồi gắt thì chân lọn thành gờ sắc, nhiều chân gần nhau thành một vòng gờ quanh đỉnh.
   Chân mọc từ chân tóc trên bướu dốc thì trồi chậm cắt mặt vỏ một vệt dài, nét viền vỡ vụn.

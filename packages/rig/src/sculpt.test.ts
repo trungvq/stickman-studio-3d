@@ -50,6 +50,28 @@ describe('lọn dẹt', () => {
   });
 });
 
+describe('tóc gai', () => {
+  const s = SCULPT_PRESETS.spiky.sculpt;
+  it('lọn đo từ giữa trán: đổi `part` không xoay bộ lọn', () => {
+    expect(sculptMesh({ ...s, part: -40 }).spikes).toEqual(sculptMesh({ ...s, part: 35 }).spikes);
+  });
+  it('lọn lá dày hơn lọn dẹt mặc định', () => {
+    const def = SCULPT_STYLES.spiky;
+    const saved = def.lockShape;
+    const span = () => {
+      const ys = sculptMesh(s).spikes.flat().map(([x, y, z]) => Math.hypot(x, y, z));
+      return Math.max(...ys) - Math.min(...ys);
+    };
+    const thick = span();
+    def.lockShape = [0.3, 0];
+    try {
+      expect(span()).toBeLessThan(thick);
+    } finally {
+      def.lockShape = saved;
+    }
+  });
+});
+
 describe('tóc vuốt ngược', () => {
   const m = sculptMesh(SCULPT_PRESETS.slick.sculpt);
   it('nhìn nghiêng mái vát ra sau, không dựng vách', () => {
