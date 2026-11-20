@@ -659,6 +659,9 @@ camera quanh trục đứng của đầu (`packages/rig/src/face.ts`), chỉ kh�
 Lớp mồm phủ mép trên / dưới (`extent`) của mọi khẩu hình; thêm khẩu hình cao hơn thì nới `MOUTH_BOX`
 (`face.test.ts` giữ hai bên khớp).
 
+Lớp nét mặt và lớp mồm nhận đèn như da mặt (`surface` với `skinLook`: sáng đều theo cường độ, không dải tối): phòng
+tối thì mắt, mày, khoang mồm tối theo da, không nổi lên như tự sáng.
+
 Cả hai chỉ đọc camera và đầu ở khung đang vẽ, không nhớ khung trước: cùng `t` cùng góc máy là cùng ảnh.
 Người nền (`lod: "low"`) không lật, không trượt.
 

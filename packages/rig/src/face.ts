@@ -3,6 +3,8 @@ import { newCanvas, path2D } from './canvas';
 import { DEFAULT_FACE } from './core/constants';
 import { blushLevel, blushMarks, browMarks, CHIBI, chibiShape, EYE_R, eyeBlink, eyeMarks, eyeShape, faceRest, humanMouthGlyph, humanMouthMarks, humanMouthTop, lookStep, mouthMark, mouthPose, mouthShape, mouthStep, moustacheMark, moustacheTop, wrinkleMarks, type FaceInk, type FaceMark, type FaceRest, type EyeShape, type EyeShapeKind, type Look, type MouthShape, type MouthShapeKind, type MoustacheSpec, type WrinkleSpec } from './core/face';
 import { FACE_R, faceSurface } from './core/humanHead';
+import { skinLook } from './garment';
+import { surface } from './npr';
 import type { FaceState } from './core/types';
 
 // Nét mặt của `core/face.ts` vẽ lên canvas rồi dán lên mặt trước của sọ theo phép chiếu thẳng — điểm lệch `x` px khỏi
@@ -197,7 +199,12 @@ function layer(r: number, scale: THREE.Vector3, human: boolean, box: Box, order:
   const g = canvas.getContext('2d') as Ctx;
   const tex = new THREE.CanvasTexture(canvas as HTMLCanvasElement);
   tex.anisotropy = 8;
-  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  tex.premultiplyAlpha = true;
+  // nhận đèn như da mặt (`skinLook`: dải sáng đều theo cường độ, không dải tối): phòng tối thì mồm, mắt tối theo da
+  const { stipple, stippleScale, soft, flat } = skinLook('#ffffff');
+  const mat = surface({ stipple, stippleScale, soft, flat, map: tex, alpha: 'blend', uvMatrix: tex.matrix });
+  mat.polygonOffsetFactor = -2;
+  mat.polygonOffsetUnits = -2;
   const mesh = new THREE.Mesh(faceCap(r * 1.004, scale, human, box), mat);
   mesh.userData.noShadow = true;
   mesh.userData.noCollide = true;

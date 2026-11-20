@@ -307,6 +307,9 @@ varying vec3 vNormal;
 #ifdef USE_MAP
 varying vec2 vUv;
 #endif
+#ifdef MAP_MATRIX
+uniform mat3 uMapMatrix;
+#endif
 #ifdef USE_TINT
 attribute vec3 tint;
 varying vec3 vTint;
@@ -318,7 +321,9 @@ void main(){
   #ifdef USE_TINT
     vTint = tint;
   #endif
-  #ifdef USE_MAP
+  #ifdef MAP_MATRIX
+    vUv = (uMapMatrix * vec3(uv, 1.0)).xy;
+  #elif defined(USE_MAP)
     vUv = uv;
   #endif
   gl_Position = projectionMatrix * viewMatrix * wp;
@@ -441,6 +446,8 @@ export interface SurfaceOptions {
   flat?: boolean;
   /** Đẩy độ sâu về phía camera để decal nằm sát mặt khác không giành điểm ảnh với mặt ấy. Mặc định có khi có `map`. */
   offset?: boolean;
+  /** Ma trận UV của `map`, dùng chung object nên đổi tại chỗ là ăn ngay (`texture.matrix` với `matrixAutoUpdate = false`) */
+  uvMatrix?: THREE.Matrix3;
 }
 
 /** Vật liệu mặt có nội dung (decal, màn hình, trang giấy). Không cache: mỗi texture một vật liệu, uniform chung `G` vẫn dùng chung. */
@@ -452,8 +459,9 @@ export function surface(o: SurfaceOptions = {}): THREE.ShaderMaterial {
   if (o.map && alpha === 'cut') defines.MAP_CUT = '';
   if (o.side && o.side !== 'front') defines.DOUBLE_SIDED = '';
   if (o.flat) defines.FLAT_KEY = '';
+  if (o.map && o.uvMatrix) defines.MAP_MATRIX = '';
   const side = o.side === 'back' ? THREE.BackSide : o.side === 'double' ? THREE.DoubleSide : THREE.FrontSide;
-  const m = shaded(defines, side, { ...ownUniforms({ stipple: 0.06, ...o }), uMap: { value: o.map ?? null } });
+  const m = shaded(defines, side, { ...ownUniforms({ stipple: 0.06, ...o }), uMap: { value: o.map ?? null }, ...(o.map && o.uvMatrix ? { uMapMatrix: { value: o.uvMatrix } } : {}) });
   m.transparent = alpha === 'blend' || (o.opacity ?? 1) < 1;
   m.depthWrite = alpha !== 'blend';
   if (o.offset ?? !!o.map) {

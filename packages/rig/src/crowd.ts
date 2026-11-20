@@ -32,7 +32,7 @@ export function freeze(figures: Figure | readonly Figure[]): THREE.Group {
       g.setAttribute('normal', src.attributes.normal.clone());
       // màu từng đỉnh của vật liệu `tint` (tóc nhiều màu, vải thân và tay áo khác màu); vỏ viền dùng chung lưới thì bỏ
       if (src.attributes.tint && (m.material as THREE.ShaderMaterial).defines?.USE_TINT !== undefined) g.setAttribute('tint', src.attributes.tint.clone());
-      if (src.attributes.uv && m.material.type === 'MeshBasicMaterial') g.setAttribute('uv', src.attributes.uv.clone());
+      if (src.attributes.uv && (m.material as THREE.ShaderMaterial).defines?.USE_MAP !== undefined) g.setAttribute('uv', src.attributes.uv.clone());
       g.applyMatrix4(m.matrixWorld);
       const key = materialKey(m.material);
       let b = buckets.get(key);

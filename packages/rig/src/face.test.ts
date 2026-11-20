@@ -8,7 +8,8 @@ import { fromCharacter, R, type CharacterJson } from './stickman';
 
 // Má ửng của người 3D: canvas nét mặt vẽ lại khi mức ửng đổi một nấc `1 / BLUSH.steps`, người nền dùng chung texture theo mức ửng
 
-const version = (m: THREE.Mesh) => (m.material as THREE.MeshBasicMaterial).map!.version;
+const mapOf = (m: THREE.Mesh) => (m.material as THREE.ShaderMaterial).uniforms.uMap.value as THREE.Texture;
+const version = (m: THREE.Mesh) => mapOf(m).version;
 const mouthOf = (f: FaceRig) => f.mesh.children[0] as THREE.Mesh;
 
 const fills = (m: FaceMark): string[] => 'clip' in m ? [] : [...(m.fill ? [m.fill] : []), ...('group' in m ? m.group.flatMap(fills) : [])];
@@ -152,7 +153,7 @@ describe('lớp mồm theo camera', () => {
     camera.updateMatrixWorld();
     f.mesh.updateMatrixWorld();
     mouth.onBeforeRender(undefined as never, undefined as never, camera, mouth.geometry, mouth.material as THREE.Material, undefined as never);
-    const e = (mouth.material as THREE.MeshBasicMaterial).map!.matrix.elements;
+    const e = mapOf(mouth).matrix.elements;
     return { scale: e[0], x: -60 + 120 * ((0.5 - e[6]) / e[0]) };
   };
 
