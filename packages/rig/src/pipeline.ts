@@ -730,7 +730,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
         spotCam.updateProjectionMatrix();
         spotCam.updateMatrixWorld();
         G.uSpotMatrix.value[l.slot].copy(BIAS).multiply(spotCam.projectionMatrix).multiply(spotCam.matrixWorldInverse);
-        G.uSpotInfo.value[l.slot].set(spotCam.near, spotCam.far, 1 / SM2);
+        G.uSpotInfo.value[l.slot].set(spotCam.near, spotCam.far, 1 / SM2, (2 * Math.tan((spotCam.fov * Math.PI) / 360)) / SM2);
         pass(scene, spotCam, spotRT[l.slot], plainDepth);
       }
       scene.overrideMaterial = null;

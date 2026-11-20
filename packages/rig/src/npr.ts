@@ -49,8 +49,8 @@ export const G = {
   uSpotMap0: { value: null as THREE.Texture | null },
   uSpotMap1: { value: null as THREE.Texture | null },
   uSpotMatrix: { value: Array.from({ length: MAX_LAMP_SHADOWS }, () => new THREE.Matrix4()) },
-  /** x near, y far, z texel uv */
-  uSpotInfo: { value: Array.from({ length: MAX_LAMP_SHADOWS }, () => new THREE.Vector3(0.1, 10, 1 / 1024)) },
+  /** x near, y far, z texel uv, w cỡ một ô bản đồ bóng (three) ở độ sâu 1: `2·tan(fov/2) / cỡ bản đồ` */
+  uSpotInfo: { value: Array.from({ length: MAX_LAMP_SHADOWS }, () => new THREE.Vector4(0.1, 10, 1 / 1024, 2 / 1024)) },
   uTime: { value: 0 },
   /** Kiểu vẽ của `render({ shade })`: 0 `paint`, 1 `cel` (nét một màu `uCelInk` đứt quãng, không vỏ ngược), 2 `manga` */
   uShade: { value: 0 },
@@ -96,7 +96,7 @@ uniform vec3 uLampPos[${MAX_LAMPS}], uLampDir[${MAX_LAMPS}], uLampColor[${MAX_LA
 uniform vec4 uLampCone[${MAX_LAMPS}];
 uniform sampler2D uSpotMap0, uSpotMap1;
 uniform mat4 uSpotMatrix[${MAX_LAMP_SHADOWS}];
-uniform vec3 uSpotInfo[${MAX_LAMP_SHADOWS}];
+uniform vec4 uSpotInfo[${MAX_LAMP_SHADOWS}];
 #define CEL (abs(uShade - 1.0) < 0.5)
 #define MANGA (uShade > 1.5)
 // Da flat (FLAT_KEY) nhận đèn cục bộ một mức đều, nhẹ hơn bậc thấp 0,4 của vải để da không ngả vàng
@@ -190,14 +190,19 @@ float sunShadow(vec3 wp, vec3 n, mat2 R){
   return s / 8.0;
 }
 float linz(float d, vec3 info){ float z = d * 2.0 - 1.0; return 2.0 * info.x * info.y / (info.y + info.x - z * (info.y - info.x)); }
-float spotShadowIn(sampler2D map, mat4 M, vec3 info, vec3 wp, vec3 n, mat2 R){
-  vec4 sc = M * vec4(wp + n*0.02, 1.0);
+// Bóng đèn chiếu: lệch theo pháp tuyến và lệch sâu theo cỡ một ô bản đồ ở chỗ điểm nhận (info.w nhân độ sâu) — đèn nón
+// rộng thì ô to, lệch cố định không đủ nên mặt tự che lấm tấm; 16 mẫu đĩa xoay theo điểm ảnh cho mép bóng mềm không lốm đốm.
+float spotShadowIn(sampler2D map, mat4 M, vec4 info, vec3 wp, vec3 n, mat2 R){
+  vec4 s0 = M * vec4(wp, 1.0);
+  if (s0.w <= 0.0) return 1.0;
+  float tex = s0.w * info.w;
+  vec4 sc = M * vec4(wp + n * max(0.02, 1.5 * tex), 1.0);
   if (sc.w <= 0.0) return 1.0;
   vec3 c = sc.xyz / sc.w;
   if (outside(c)) return 1.0;
-  float z = linz(c.z, info) - 0.025, s = 0.0;
-  for (int i = 0; i < 16; i += 2) s += (z > linz(texture2D(map, c.xy + R * PD[i] * 1.5 * info.z).r, info)) ? 0.0 : 1.0;
-  return s / 8.0;
+  float z = linz(c.z, info.xyz) - max(0.025, 0.5 * tex), s = 0.0;
+  for (int i = 0; i < 16; i++) s += (z > linz(texture2D(map, c.xy + R * PD[i] * 1.5 * info.z).r, info.xyz)) ? 0.0 : 1.0;
+  return s / 16.0;
 }
 // Nắng qua cửa sổ: lần tia về phía mặt trời tới mặt phẳng cửa, chỉ sáng khi tia lọt qua ô kính.
 float sunThrough(vec3 wp){
