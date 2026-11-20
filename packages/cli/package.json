@@ -9,6 +9,7 @@
     "check-worker.mjs",
     "gen.mjs",
     "gen-board.mjs",
+    "gen-board-arm.mjs",
     "gen-check.mjs",
     "gen-pages.mjs",
     "gen-pour.mjs",
@@ -33,7 +34,7 @@
   },
   "scripts": {
     "typecheck": "echo skip",
-    "test": "node --test args.test.mjs upgrade.test.mjs clash.test.mjs snap.test.mjs palm.test.mjs groups.test.mjs sweep.test.mjs scope.test.mjs held.test.mjs migrate.test.mjs migrate-elbow.test.mjs rawjson.test.mjs roles.test.mjs studio3d.test.mjs walk.test.mjs narrow.test.mjs",
+    "test": "node --test files.test.mjs args.test.mjs upgrade.test.mjs clash.test.mjs snap.test.mjs palm.test.mjs groups.test.mjs sweep.test.mjs scope.test.mjs held.test.mjs migrate.test.mjs migrate-elbow.test.mjs rawjson.test.mjs roles.test.mjs studio3d.test.mjs walk.test.mjs narrow.test.mjs",
     "test:gen": "node --test gen.test.mjs gen-board-arm.test.mjs",
     "build": "echo skip",
     "prepack": "node prepack.mjs",
