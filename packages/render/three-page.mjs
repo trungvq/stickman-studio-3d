@@ -11,9 +11,10 @@ export function boot(rig, world) {
 
   /**
    * Cảnh three: `worldOf` của repo như `check`, cảnh repo không dựng thì `plainRoom()`; `preview` là bối cảnh xem thử
-   * (`previewSet` của rig) thay cả hai; `props` là sân khấu thử của `stickman gen` (`propWorld` của rig, `{ list, h }`)
+   * (`previewSet` của rig) thay cả hai; `props` là sân khấu thử của `stickman gen` (`propWorld` của rig, `{ list, h }`);
+   * `still` là `WorldSpec.still` của bối cảnh xem thử và `plainRoom()`
    */
-  const build = ({ id, scene, data, plain, preview, props }) => {
+  const build = ({ id, scene, data, plain, preview, props, still }) => {
     const { characters, actions, held: items, hands, heights, bodies } = data;
     const runtime = rig.resolveScene(scene, actions, heights, bodies, items, hands);
     const ctx = { id, scene, runtime, characters, actions, heights, bodies };
@@ -35,7 +36,7 @@ export function boot(rig, world) {
         w: rig.buildWorld(
           scene,
           runtime,
-          { set: () => rig.previewSet(preview.stage, preview) },
+          { set: () => rig.previewSet(preview.stage, preview), ...(still && { still }) },
           ctx,
         ),
         from: "preview",
@@ -51,7 +52,12 @@ export function boot(rig, world) {
       }
     }
     return {
-      w: rig.buildWorld(scene, runtime, { set: () => rig.plainRoom() }, ctx),
+      w: rig.buildWorld(
+        scene,
+        runtime,
+        { set: () => rig.plainRoom(), ...(still && { still }) },
+        ctx,
+      ),
       from: "plain",
     };
   };

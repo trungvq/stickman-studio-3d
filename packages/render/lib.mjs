@@ -710,6 +710,8 @@ export async function soloThree({
           scene: scene.data,
           data: threeData(scene.data, data),
           plain: true,
+          // người ngồi (`world.sit`) vẫn diễn theo `time`, không đóng băng ở dáng giây 0
+          still: [],
           furniture: s.furniture ?? [],
           times: [],
         },

@@ -94,10 +94,10 @@ async function launch(software) {
 }
 
 /**
- * Chạy các lượt vẽ trong một Chromium: mỗi `job` là `{ id, scene, data, times, plain?, preview?, props?, furniture? }` —
+ * Chạy các lượt vẽ trong một Chromium: mỗi `job` là `{ id, scene, data, times, plain?, preview?, props?, still?, furniture? }` —
  * `scene` đã parse, `data` của `threeData`, `plain` bỏ qua `worldOf` của repo, `preview` là `{ stage, ...PreviewSetOptions }`
  * của bối cảnh xem thử (`previewSet`), `props` là `{ list, h }` đồ thử của sân khấu `stickman gen` (`propWorld`, món của
- * `world.hands` qua `previewExtra`), `furniture` là `Item` của rig thêm vào bối cảnh. Trả `{ gpu, boot, jobs: [{ from,
+ * `world.hands` qua `previewExtra`), `still` là `WorldSpec.still` của `preview` và `plain`, `furniture` là `Item` của rig thêm vào bối cảnh. Trả `{ gpu, boot, jobs: [{ from,
  * warnings, frames: [{ t, png, ms }] }] }`: `from` là `world` (cảnh của repo), `preview`, `props` hay `plain` (`plainRoom()`), `png` là Buffer, `ms` thời gian vẽ khung trong trang, `boot` ms gói trang và mở Chromium
  */
 export async function threeShots({ root = process.cwd(), jobs, size, software = false }) {

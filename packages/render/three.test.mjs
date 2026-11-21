@@ -94,6 +94,38 @@ describe("ảnh three", { skip }, () => {
     assert.ok(r.warnings.some((w) => w.includes("plainRoom")));
   });
 
+  it("người `world.sit` đóng băng ở dáng giây 0, `still: []` thì diễn theo giây", async () => {
+    const scene = rig.parseScene({
+      ...SCENE,
+      cast: [
+        {
+          ...SCENE.cast[0],
+          world: { at: [0, -80, 0], yaw: 0, sit: true, floor: 0 },
+          tracks: [{ clips: [{ action: "sit-down-3d", start: 0 }] }],
+        },
+      ],
+    }).data;
+    const sat = loadScene(scene, [join(COMMON, "actions")], [join(COMMON, "characters")], []);
+    const job = {
+      id: "thu-ngoi",
+      scene,
+      data: threeData(scene, { characters, ...sat }),
+      plain: true,
+    };
+    const r = await threeShots({
+      root,
+      size,
+      software: true,
+      jobs: [
+        { ...job, times: [0.3, 1.05] },
+        { ...job, still: [], times: [0.3, 1.05] },
+      ],
+    });
+    const [frozen, live] = r.jobs.map((j) => j.frames.map((f) => f.png));
+    assert.ok(frozen[0].equals(frozen[1]), "người nền không đổi theo giây");
+    assert.ok(!live[0].equals(live[1]), "người diễn đổi dáng theo giây");
+  });
+
   it("size lệch tỉ lệ khung cảnh thì báo", () => {
     assert.throws(() => threeSize("640x640", loaded.rt.frame), /tỉ lệ/);
     assert.deepEqual(threeSize("1280x720", loaded.rt.frame), { w: 1280, h: 720 });
