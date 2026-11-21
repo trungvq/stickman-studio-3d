@@ -629,6 +629,30 @@ bình — đặt `--at` sau khi tay người nhận đã yên.
 Lệnh dựng runtime với hành động chưa ghi đĩa (`checkScenes({ actions })`), nên không để lại gì khi không đạt. `note` của file
 sinh ghi cảnh, người, giây, chỗ cốc, hướng và chỗ cầm; cốc hay người rót đổi chỗ thì sinh lại, không sửa tay.
 
+### Thông số đo
+
+`gen sit`, `gen board`, `gen pour` cần đồ của cảnh three (mặt ngồi, lưng ghế, tay vịn, bàn, để chân, ô cửa, vật đựng). Dựng
+cảnh three là phần chậm nhất (mọi người của cảnh, cả phòng, cả xe), còn phép tính sau đó chỉ cần số đo của đồ. Thử nhiều cờ
+cho một chỗ thì đo một lần, sinh nhiều lần:
+
+```bash
+pnpm exec stickman gen board --measure --scene t07-s019 --cast kuga --way in --at 2.1   # dựng cảnh three, ghi gen/board-t07-s019-kuga-2.1.json
+pnpm exec stickman gen board --spec gen/board-t07-s019-kuga-2.1.json --scene t07-s019 --cast kuga --way in --at 2.1 --legs bent
+```
+
+- `--measure` dựng cảnh three một lần, ghi `gen/<kiểu>-<cảnh>-<người>-<giây>.json` và in mọi mục vai trò kiểu ấy dùng, toạ độ
+  thế giới rig (`sit` đánh dấu mặt ngồi dưới hông). `pour` in thêm đích rót chọn được cho `--cup` — người cầm món mang
+  `vessel`, món của `items[]`, vật của cảnh three — với tâm miệng ở giây rót hết và khoảng tới vai phải người rót, so với cánh
+  tay cộng cẳng tay: chọn đích từ đây, đừng đoán số. Không sinh hành động; `--dry-run` thì không ghi file.
+- `--spec <file>` sinh từ file ấy, không dựng cảnh three. File ghi mọi mục vai trò cảnh three trả ra ở `--at` và mỗi
+  `0,25 s` sau đó (sit `3,4 s`, board pha hạ + pha rút + một nhịp ngồi, pour `3 s`); không vật nào dời thì chỉ giữ một bản.
+  Cùng file, cùng cờ, cùng cảnh và nhân vật thì ra cùng hành động.
+- File nhớ khoá của cảnh (JSON cảnh bỏ chỗ đứng, `path`, `sit`, `floor`, track của người được sinh — chính phần
+  `gen walk` / `gen board` ghi —, cộng món `held/`) và dấu nội dung mọi file nguồn của gói `stickman.world`. Một trong hai
+  đổi từ lúc đo, hay `--scene`, `--cast`, `--at` khác file, thì lỗi kèm lệnh đo lại.
+- Không `--spec` thì lệnh tự đo như cũ và ghi luôn file thông số (trừ khi `--dry-run`), in lệnh `--spec` cho lần sau.
+- Repo không khai `stickman.world` thì không có gì để đo: đồ chỉ khai bằng cờ số (đồ ảo).
+
 ### Ngồi theo ghế của cảnh
 
 `sit-3d` giả định mặt ngồi cao bằng gối (`87,5` ở `height` 1) và đùi người mẫu: ghế thấp hơn thì bàn chân lún sàn, cao hơn
@@ -881,8 +905,6 @@ ghế hơn (ở trong khi đứng nhìn dọc thân xe), *chân phía cửa* là
   mốc kề, lọc `[1, 2, 1]` `smooth` `2` lần. Lòng tay lún vào thân trên (vạt áo khoác dựng đứng, bụng lúc cúi) thì dời chỗ
   đặt ra trước theo hướng thân cho khỏi, vì nâng không gỡ được. Lệnh in số mốc nâng, mức cao nhất, cảnh báo cổ tay kẹp ở
   biên, khuỷu gập ngược, bàn tay còn lún vào thân trên (soi `can-tay`).
-- *Tự kiểm luôn chạy* nhóm `move`, `held` trên cảnh sau khi sinh (`--clash` thêm nhóm `clash`); dòng mới thì không ghi,
-  `--force` mới ghi kèm cảnh báo.
 
 **Tự kiểm** (`--check`) trên cảnh đã vá, mỗi khung trong quãng sinh, chỉ người vào / ra:
 

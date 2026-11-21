@@ -2,7 +2,7 @@
 // bằng `gen-check.mjs` rồi mới ghi `actions/`. Kiểu `pour` (rót), `sit` (ngồi); đồ của cảnh tìm theo vai trò (slot của
 // `GEN_KINDS`) — docs/05-repo-video.md#sinh-hành-động-theo-cảnh, docs/13-vai-tro-do.md mục 6.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import * as rig from "@stickman3d/rig/core";
 import prettier from "prettier";
 import {
@@ -136,6 +136,15 @@ import {
 } from "./gen-walk.mjs";
 import { backPlane, entryName, inPoly, rectHolds, rectLocal, roleMoved } from "./roles-check.mjs";
 import { loadWorld, worldEntry } from "@stickman3d/render";
+import {
+  readSpec,
+  recordThree,
+  replayThree,
+  sceneKey,
+  specFile,
+  specOf,
+  worldStamp,
+} from "./gen-spec.mjs";
 
 const D = Math.PI / 180;
 const sub = (a, b) => a.map((v, i) => v - b[i]);
@@ -299,6 +308,8 @@ async function sceneThree(root, o, scene, data) {
   return {
     /** Rig three của repo (`stickman.world`): dựng riêng một người (`fromCharacter`, `act`) */
     rig: world.rig,
+    /** File nguồn của gói cảnh three (`worldStamp` của thông số đo) */
+    inputs: world.inputs ?? [],
     propsAt(t) {
       const k = +t.toFixed(4);
       if (!cache.has(k)) {
@@ -319,6 +330,83 @@ async function sceneThree(root, o, scene, data) {
       };
     },
   };
+}
+
+/** Lệnh đo lại thông số của lần sinh `kind` */
+const measureCmd = (kind, o, at) =>
+  `pnpm exec stickman gen ${kind} --measure --scene ${o.scene} --cast ${o.cast} --at ${at}${o.way ? ` --way ${o.way}` : ""}`;
+
+/**
+ * Cảnh three của bộ sinh `kind` từ giây `at` (docs/05-repo-video.md#thông-số-đo): `o.three` khi bộ sinh gọi lồng (dùng
+ * chung một bản); `o.spec` là file thông số — không dựng cảnh three, chỉ kiểm cảnh, món `held/` và code `stickman.world`
+ * chưa đổi từ lúc đo; không thì dựng thật (`sceneThree`) và ghi lại mọi lần hỏi đồ cho `saveSpec`
+ */
+async function threeFor(root, o, sd, kind, at) {
+  if (o.three) return o.three;
+  if (o.spec) {
+    const spec = readSpec(root, o.spec, kind, fail);
+    const again = measureCmd(kind, o, at);
+    if (spec.scene !== o.scene || spec.cast !== o.cast)
+      fail(
+        `${o.spec} đo cho cảnh \`${spec.scene}\`, người \`${spec.cast}\`, không phải \`${o.scene}\`, \`${o.cast}\``,
+      );
+    if (Math.abs(spec.at - at) > 1e-6)
+      fail(`${o.spec} đo từ giây ${spec.at}, lệnh này từ giây ${at} — đo lại: ${again}`);
+    if (sceneKey(sd.raw, o.cast, sd.data.held) !== spec.sceneKey)
+      fail(
+        `${o.spec}: cảnh \`${o.scene}\` (ngoài chỗ đứng, \`path\`, track của \`${o.cast}\`) hay món \`held/\` đã đổi từ lúc đo — đo lại: ${again}`,
+      );
+    if (spec.none) return { none: spec.none };
+    if (worldStamp(root, spec.world.files) !== spec.world.stamp)
+      fail(`${o.spec}: code \`stickman.world\` đã đổi từ lúc đo — đo lại: ${again}`);
+    let R;
+    try {
+      R = await loadWorld(root, { bare: true });
+    } catch (e) {
+      fail(`không nạp được \`@stickman3d/rig\` của repo: ${e.message}`);
+    }
+    return replayThree(spec, R?.rig);
+  }
+  const three = await sceneThree(root, o, sd.scene, sd.data);
+  return three.none || o.stage ? three : recordThree(three);
+}
+
+/**
+ * Thông số đo của lần sinh `kind` từ cảnh three đã ghi lại (`threeFor`): `{ spec, file }`, `undefined` khi cảnh three
+ * không dựng thật (sân khấu thử, gọi lồng, đọc từ `--spec`). `span` giây sau `at` đo thêm
+ */
+function specFor(root, o, three, { kind, sd, at, span }) {
+  if (o.three || o.stage || o.spec || !three || (!three.frames && !three.none)) return undefined;
+  const key = sceneKey(sd.raw, o.cast, sd.data.held);
+  const head = { kind, scene: o.scene, cast: o.cast, at };
+  const spec = three.none
+    ? { specVersion: 1, ...head, sceneKey: key, none: three.none, props: [] }
+    : specOf(three, {
+        ...head,
+        span,
+        duration: sd.rt0.duration,
+        key,
+        world: { files: three.inputs, stamp: worldStamp(root, three.inputs) },
+      });
+  return { spec, file: o.specOut ?? specFile(kind, o.scene, o.cast, at) };
+}
+
+/** Ghi thông số của `specFor` (trừ khi chạy khô), nối dòng báo vào `lines`; trả đường dẫn đã ghi */
+async function saveSpec(root, o, got, lines) {
+  if (!got) return undefined;
+  if (o.dryRun) {
+    lines.push(
+      `thông số đo: chạy khô nên không ghi — đo một lần bằng \`--measure\`, rồi sinh bằng \`--spec ${got.file}\` (không dựng cảnh three)`,
+    );
+    return undefined;
+  }
+  const path = resolve(root, got.file);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, await pretty(got.spec, path));
+  lines.push(
+    `thông số đo: ghi ${got.file} — lần sau thêm \`--spec ${got.file}\` cho nhanh (không dựng cảnh three)`,
+  );
+  return got.file;
 }
 
 /**
@@ -672,7 +760,8 @@ export async function genPour(o) {
   const dir0 = o.pourDir === undefined ? K0.dir : Number(o.pourDir);
   if (!Number.isFinite(dir0)) fail(`--pour-dir phải là số độ, không phải \`${o.pourDir}\``);
 
-  const { data, scene, member, chars, c, runtimeOf, rt0, marks } = sceneFor(root, o, at);
+  const sd = sceneFor(root, o, at);
+  const { data, scene, member, chars, c, runtimeOf, rt0, marks } = sd;
   const end = at + POUR_DURATION;
 
   // bình (slot `bottle`, `heldRight`): món tay phải giải phẫu đang cầm, không thì `--item`; vật rót đọc từ vai trò `pourer`
@@ -697,7 +786,7 @@ export async function genPour(o) {
 
   // đích rót theo thời gian, thế giới rig
   let three;
-  const threeOf = async () => (three ??= await sceneThree(root, o, scene, data));
+  const threeOf = async () => (three ??= await threeFor(root, o, sd, "pour", at));
   const cup = await cupTarget(o.cup, { scene, rt: rt0, data, chars, at, end, marks, threeOf });
 
   const name = o.name ?? `pour${style === "serve" ? "-serve" : ""}-${o.scene}-${o.cast}-3d`;
@@ -962,6 +1051,12 @@ export async function genPour(o) {
       reach?.worst > 0 &&
       `gần hết tầm với (bàn tay còn cách đích ${reach.worst}): dời người rót lại gần cốc`,
   ]);
+  const specSaved = await saveSpec(
+    root,
+    o,
+    specFor(root, o, three, { kind: "pour", sd, at, span: POUR_DURATION }),
+    lines,
+  );
   lines.push(
     `dán vào track của \`${o.cast}\`: ${JSON.stringify(snippet.clip)}` +
       (snippet.hand
@@ -983,6 +1078,7 @@ export async function genPour(o) {
     name,
     scene: sceneWith(true),
     checks: checkRows(best.core, world, ignore),
+    ...(specSaved && { spec: specSaved }),
     lines,
     text: lines.join("\n"),
   };
@@ -1327,7 +1423,8 @@ export async function genSit(o) {
     if (flags[k.slot]?.none && needed(k))
       fail(`--${k.flag} none: --hands ${hands} cần ${ROLE_LABEL[k.role]} (vai trò \`${k.role}\`)`);
 
-  const { data, scene, member, chars, c, runtimeOf, rt0 } = sceneFor(root, o, at);
+  const sd = sceneFor(root, o, at);
+  const { data, scene, member, chars, c, runtimeOf, rt0 } = sd;
   const marks = rt0.marks;
   const h = c.rig.height;
   const sp0 = rig.sceneAt(rt0, o.cast, at, h, rt0.bodies[o.cast]);
@@ -1346,8 +1443,8 @@ export async function genSit(o) {
   const sitAt = [W.hip[0], seatY, W.hip[2]];
   const window0 = [at, Math.min(at + SIT_DURATION, rt0.duration)];
 
-  // đồ của cảnh theo vai trò ở giây `at`; cờ tên vật cần cảnh three, cờ số là đồ ảo
-  const three = await sceneThree(root, o, scene, data);
+  // đồ của cảnh theo vai trò ở giây `at`; cờ tên vật cần cảnh three (hay thông số đo `--spec`), cờ số là đồ ảo
+  const three = await threeFor(root, o, sd, "sit", at);
   const props = three.none ? [] : three.propsAt(at);
   const used = {};
   const slotLines = [];
@@ -2393,7 +2490,7 @@ export async function genSit(o) {
         `\`${o.cast}\` đứng dậy ở giây ${sec(t)}, trước khi hết một nhịp thở (${SIT_DURATION} s) — đặt --at sớm hơn hay kéo dài quãng ngồi`,
       );
 
-  // tự kiểm (`--check`); số đo chân, mặt ngồi dưới đây là phần giải nên luôn tính
+  // tự kiểm (`--check`): luật lõi và luật đo từng khung dưới đây chỉ chạy khi kiểm
   const groupsS = genGroups(o, ["move", "clash", "held", "roles"]);
   const core = groupsS
     ? ["right", "left"].flatMap((side) =>
@@ -2606,9 +2703,9 @@ export async function genSit(o) {
       min: 0,
       soft: !rest.strict,
     });
-  core.push(...restChecks({ window, rest: rests, clear: clears }));
+  if (groupsS) core.push(...restChecks({ window, rest: rests, clear: clears }));
   // chân thõng: đế giày không lún mặt đỡ; hở dưới `DANGLE_MIN` là cảnh báo (trông như hụt chân)
-  for (const [tag, label] of dangling) {
+  for (const [tag, label] of groupsS ? dangling : []) {
     let lo = { g: Infinity, t: at };
     for (const t of times) {
       const J = joints(t);
@@ -2653,7 +2750,7 @@ export async function genSit(o) {
     });
   }
   // đùi lún mép trước mặt ngồi (docs/13 mục 3.3)
-  if (seat) {
+  if (seat && groupsS) {
     let worst = { k: -Infinity, t: at, tag: "R" };
     for (const t of sampleTimes(at, end, CLASH_EVERY)) {
       const r = seat.at(t);
@@ -2681,7 +2778,7 @@ export async function genSit(o) {
         : `đùi trên mép trước \`${entryName(seat.prop, seat.role)}\` (${worst.k > 0 ? `lún ${comma(worst.k)}` : `hở ${comma(-worst.k)}`})`,
     });
   }
-  if (hands === "table") {
+  if (hands === "table" && groupsS) {
     const k = r1(bend(times.map(spAt)));
     core.push({
       rule: "bend",
@@ -2700,82 +2797,84 @@ export async function genSit(o) {
   if (seat) {
     const sr = seat.role;
     const nm = `\`${entryName(seat.prop, sr)}\``;
-    const halfSide = (rig.body3(c).hipHalf + rig.limbHalf(c).leg) * s;
-    let gone;
-    let lift = { dy: 0, t: at };
-    let tail = { out: -Infinity, t: at };
-    let side = { room: Infinity, w: 0, t: at };
-    let front = { d: Infinity, t: at };
-    for (const t of sampleTimes(at, end, CLASH_EVERY)) {
-      const r = seat.at(t);
-      if (!r) {
-        gone ??= t;
-        continue;
+    if (groupsS) {
+      const halfSide = (rig.body3(c).hipHalf + rig.limbHalf(c).leg) * s;
+      let gone;
+      let lift = { dy: 0, t: at };
+      let tail = { out: -Infinity, t: at };
+      let side = { room: Infinity, w: 0, t: at };
+      let front = { d: Infinity, t: at };
+      for (const t of sampleTimes(at, end, CLASH_EVERY)) {
+        const r = seat.at(t);
+        if (!r) {
+          gone ??= t;
+          continue;
+        }
+        const sp = spAt(t);
+        const hip = sp.world.hip;
+        const dy = hip[1] + legHalf * s - r.at[1];
+        if (Math.abs(dy) > Math.abs(lift.dy)) lift = { dy, t };
+        const q = rectLocal(r, hip);
+        const room = r.size[1] / 2 - Math.abs(q.w) - halfSide;
+        if (room < side.room) side = { room, w: q.w, t };
+        if (r.size[0] / 2 - q.d < front.d) front = { d: r.size[0] / 2 - q.d, t };
+        // đuôi mông so với mép sau (trừ khi chạm lưng ghế)
+        const Tr = rig.trunk3(c, sp);
+        const Sh = rig.markShape(Tr);
+        const rb = rest?.at(t);
+        for (const k of TAIL_SPAN) {
+          const p = backAt(Tr, Sh, k);
+          const out = -(r.size[0] / 2 + rectLocal(r, p).d);
+          if (out <= 0 || out <= tail.out) continue;
+          if (rb && backPlane(rb).at(p).gap <= SEAT_RULE.touch * s) continue;
+          tail = { out, t };
+        }
       }
-      const sp = spAt(t);
-      const hip = sp.world.hip;
-      const dy = hip[1] + legHalf * s - r.at[1];
-      if (Math.abs(dy) > Math.abs(lift.dy)) lift = { dy, t };
-      const q = rectLocal(r, hip);
-      const room = r.size[1] / 2 - Math.abs(q.w) - halfSide;
-      if (room < side.room) side = { room, w: q.w, t };
-      if (r.size[0] / 2 - q.d < front.d) front = { d: r.size[0] / 2 - q.d, t };
-      // đuôi mông so với mép sau (trừ khi chạm lưng ghế)
-      const Tr = rig.trunk3(c, sp);
-      const Sh = rig.markShape(Tr);
-      const rb = rest?.at(t);
-      for (const k of TAIL_SPAN) {
-        const p = backAt(Tr, Sh, k);
-        const out = -(r.size[0] / 2 + rectLocal(r, p).d);
-        if (out <= 0 || out <= tail.out) continue;
-        if (rb && backPlane(rb).at(p).gap <= SEAT_RULE.touch * s) continue;
-        tail = { out, t };
-      }
+      const gonePart =
+        gone !== undefined && `mặt ngồi ${nm} không còn trong cảnh ở giây ${sec(gone)}`;
+      const dy = lift.dy;
+      const far = Math.abs(dy) > SEAT_RULE.error * s;
+      const off = Math.abs(dy) > SEAT_RULE.warn * s;
+      core.push({
+        rule: "seat",
+        level: gonePart || far ? "lỗi" : off ? "cảnh báo" : "ok",
+        worst: r2(Math.abs(dy)),
+        t: gone ?? lift.t,
+        limit: `lệch ≤ ${r1(SEAT_RULE.warn * s)}`,
+        msg: gonePart
+          ? `${gonePart} — tự kiểm mất mặt ngồi`
+          : off
+            ? `điểm ngồi ${dy < 0 ? "lơ lửng trên" : "lún vào"} mặt ngồi ${nm} ${comma(Math.abs(dy))} ở giây ${sec(lift.t)}: đặt \`world.at[1]\` = ${comma(seat.at(lift.t).at[1])}`
+            : `điểm ngồi trên mặt ngồi ${nm} (lệch ${r2(Math.abs(dy))})`,
+      });
+      const bad = [
+        tail.out > 0 &&
+          `đuôi mông ra ngoài mép sau ${comma(tail.out)} ở giây ${sec(tail.t)} mà không chạm lưng ghế`,
+        side.room < 0 &&
+          `hông cộng đùi ra ngoài mép ${side.w > 0 ? "phải" : "trái"} ${comma(-side.room)} ở giây ${sec(side.t)}`,
+      ].filter(Boolean);
+      core.push({
+        rule: "seat",
+        level: bad.length ? "lỗi" : "ok",
+        worst: r2(Math.max(0, tail.out, -side.room)),
+        t: tail.out > 0 ? tail.t : side.room < 0 ? side.t : at,
+        limit: "trong mép",
+        msg: bad.length
+          ? `mông lọt mép ${nm}: ${bad.join("; ")} — dời điểm ngồi vào giữa mặt ngồi`
+          : `mông trong mép ${nm} (hai bên còn ${r1(side.room)})`,
+      });
+      const shallow = front.d < SHALLOW * rig.RIG.thigh * hs;
+      core.push({
+        rule: "seat",
+        level: shallow ? "cảnh báo" : "ok",
+        worst: r2(front.d),
+        t: front.t,
+        limit: `hông tới mép trước ≥ ${r1(SHALLOW * rig.RIG.thigh * hs)}`,
+        msg: shallow
+          ? `ngồi nông trên ${nm}: hông cách mép trước ${comma(front.d)} ở giây ${sec(front.t)} (dưới ⅓ đùi) — ngồi lùi vào`
+          : `hông cách mép trước ${nm} ${r1(front.d)}`,
+      });
     }
-    const gonePart =
-      gone !== undefined && `mặt ngồi ${nm} không còn trong cảnh ở giây ${sec(gone)}`;
-    const dy = lift.dy;
-    const far = Math.abs(dy) > SEAT_RULE.error * s;
-    const off = Math.abs(dy) > SEAT_RULE.warn * s;
-    core.push({
-      rule: "seat",
-      level: gonePart || far ? "lỗi" : off ? "cảnh báo" : "ok",
-      worst: r2(Math.abs(dy)),
-      t: gone ?? lift.t,
-      limit: `lệch ≤ ${r1(SEAT_RULE.warn * s)}`,
-      msg: gonePart
-        ? `${gonePart} — tự kiểm mất mặt ngồi`
-        : off
-          ? `điểm ngồi ${dy < 0 ? "lơ lửng trên" : "lún vào"} mặt ngồi ${nm} ${comma(Math.abs(dy))} ở giây ${sec(lift.t)}: đặt \`world.at[1]\` = ${comma(seat.at(lift.t).at[1])}`
-          : `điểm ngồi trên mặt ngồi ${nm} (lệch ${r2(Math.abs(dy))})`,
-    });
-    const bad = [
-      tail.out > 0 &&
-        `đuôi mông ra ngoài mép sau ${comma(tail.out)} ở giây ${sec(tail.t)} mà không chạm lưng ghế`,
-      side.room < 0 &&
-        `hông cộng đùi ra ngoài mép ${side.w > 0 ? "phải" : "trái"} ${comma(-side.room)} ở giây ${sec(side.t)}`,
-    ].filter(Boolean);
-    core.push({
-      rule: "seat",
-      level: bad.length ? "lỗi" : "ok",
-      worst: r2(Math.max(0, tail.out, -side.room)),
-      t: tail.out > 0 ? tail.t : side.room < 0 ? side.t : at,
-      limit: "trong mép",
-      msg: bad.length
-        ? `mông lọt mép ${nm}: ${bad.join("; ")} — dời điểm ngồi vào giữa mặt ngồi`
-        : `mông trong mép ${nm} (hai bên còn ${r1(side.room)})`,
-    });
-    const shallow = front.d < SHALLOW * rig.RIG.thigh * hs;
-    core.push({
-      rule: "seat",
-      level: shallow ? "cảnh báo" : "ok",
-      worst: r2(front.d),
-      t: front.t,
-      limit: `hông tới mép trước ≥ ${r1(SHALLOW * rig.RIG.thigh * hs)}`,
-      msg: shallow
-        ? `ngồi nông trên ${nm}: hông cách mép trước ${comma(front.d)} ở giây ${sec(front.t)} (dưới ⅓ đùi) — ngồi lùi vào`
-        : `hông cách mép trước ${nm} ${r1(front.d)}`,
-    });
     const hipQ = rectLocal(sr, W.hip);
     const toFront = sr.size[0] / 2 - hipQ.d;
     const toRight = sr.size[1] / 2 - hipQ.w;
@@ -2872,6 +2971,12 @@ export async function genSit(o) {
       closer,
     }),
   );
+  const specSaved = await saveSpec(
+    root,
+    o,
+    specFor(root, o, three, { kind: "sit", sd, at, span: SIT_DURATION }),
+    lines,
+  );
   lines.push(
     replaced
       ? `thay clip \`${replaced.action}\` (giây ${at}) ở track \`${base.name ?? 0}\` của \`${o.cast}\` bằng: ${JSON.stringify(snippet.clip)}`
@@ -2896,6 +3001,7 @@ export async function genSit(o) {
     name,
     scene: sceneWith(true),
     checks: checkRows(core, world, ignore),
+    ...(specSaved && { spec: specSaved }),
     lines,
     text: lines.join("\n"),
   };
@@ -3529,7 +3635,7 @@ export async function genBoard(o) {
   if (!o.scene) fail("thiếu --scene <id cảnh>");
   if (!o.cast) fail("thiếu --cast <id người>");
   const sd = sceneData(root, o);
-  const { data, raw, scene, chars, c, runtimeOf, rt0, marks } = sd;
+  const { data, raw, chars, c, runtimeOf, rt0, marks } = sd;
   const relScene = `scenes/${o.scene}.json`;
   if (o.hash !== undefined && o.hash !== null && sd.hash !== undefined && o.hash !== sd.hash)
     throw new GenConflict(
@@ -3566,8 +3672,8 @@ export async function genBoard(o) {
   const T = T1 + T2;
   const tEnd = at + T;
 
-  // ô cửa, mặt ngồi theo vai trò ở giây `at`
-  const three = await sceneThree(root, o, scene, data);
+  // ô cửa, mặt ngồi theo vai trò ở giây `at` (cảnh three, hay thông số đo `--spec`)
+  const three = await threeFor(root, o, sd, "board", at);
   const props = three.none ? [] : three.propsAt(at);
   const SLOTS = Object.fromEntries(GEN_KINDS.board.roles.map((k) => [k.slot, k]));
   const fDoor = flagOf(SLOTS.door, o);
@@ -3927,6 +4033,7 @@ export async function genBoard(o) {
   try {
     sitRes = await genSit({
       ...sitOpts,
+      three,
       check: o.check,
       clash: o.clash,
       dir: root,
@@ -4844,8 +4951,7 @@ export async function genBoard(o) {
         `nhấc ≤ ${comma(liftMax)}`,
         `nhấc chân ${legName[which === "inner" ? innerLeg : outerLeg]} tới ${comma(liftMax)} vẫn chưa qua ngưỡng`,
       );
-  // gen board luôn tự kiểm (move, held; --clash thêm clash): khuỷu nhảy, rung, cổ tay, tầm với chặn ghi
-  const groupsB = genGroups(o, ["move", "clash", "held"]) ?? ["move", "held"];
+  const groupsB = genGroups(o, ["move", "clash", "held"]);
   if (groupsB)
     for (const side of ["right", "left"])
       core.push(
@@ -4982,6 +5088,12 @@ export async function genBoard(o) {
         lines,
       );
   }
+  const specSaved = await saveSpec(
+    root,
+    o,
+    specFor(root, o, three, { kind: "board", sd, at, span: T + SIT_DURATION }),
+    lines,
+  );
   return {
     ok: !failed,
     wrote,
@@ -5008,6 +5120,7 @@ export async function genBoard(o) {
     world,
     checks,
     ...(sd.hash && { hash: sd.hash }),
+    ...(specSaved && { spec: specSaved }),
     lines,
     text: lines.join("\n"),
   };
@@ -5124,9 +5237,151 @@ export function slotTable(kind) {
 }
 
 /** `stickman gen <kind>`: chạy kiểu `kind` với tham số `o` */
+/** Vai trò `--measure` liệt kê theo kiểu */
+const MEASURE_ROLES = {
+  sit: ["seat", "backrest", "armrest", "tabletop", "footrest"],
+  board: ["doorway", "seat"],
+  pour: ["vessel"],
+};
+
+/** Mọi số trong `v` làm tròn một chữ số thập phân */
+const round1 = (v) =>
+  Array.isArray(v)
+    ? v.map(round1)
+    : v && typeof v === "object"
+      ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, round1(x)]))
+      : typeof v === "number"
+        ? r1(v)
+        : v;
+
+/**
+ * `stickman gen <kiểu> --measure` (docs/05-repo-video.md#thông-số-đo): dựng cảnh three một lần, ghi thông số đo
+ * `gen/<kiểu>-<cảnh>-<người>-<giây>.json` (chạy khô thì không ghi) và in mọi mục vai trò kiểu ấy dùng, toạ độ thế giới
+ * rig. `sit`: đánh dấu mặt ngồi dưới hông; `pour`: thêm đích rót chọn được (`--cup`) với miệng ở giây rót và khoảng tới
+ * vai phải người rót. Không sinh hành động. Trả `{ ok, spec (đường dẫn), wrote, candidates?, lines, text }`
+ */
+export async function genMeasure(kind, o) {
+  const root = resolve(o.dir ?? ".");
+  if (!MEASURE_ROLES[kind]) fail(`--measure có cho gen sit | board | pour, không cho \`${kind}\``);
+  if (o.spec) fail("--measure không đi với --spec: --measure là bước đo, --spec là bước sinh");
+  if (!o.scene) fail("thiếu --scene <id cảnh>");
+  if (!o.cast) fail("thiếu --cast <id người>");
+  const sd = sceneData(root, o);
+  const at = timeOf(o.at, sd.marks, "--at") ?? (kind === "pour" ? fail("thiếu --at <giây>") : 0);
+  if (at < 0 || at > sd.rt0.duration) fail(`--at ${at} ngoài cảnh (0 … ${sd.rt0.duration} s)`);
+  const span =
+    kind === "sit"
+      ? SIT_DURATION
+      : kind === "pour"
+        ? POUR_DURATION
+        : BOARD_TIME.sit + BOARD_TIME.swing + SIT_DURATION;
+  const t0 = performance.now();
+  const three = await threeFor(root, { ...o, spec: undefined }, sd, kind, at);
+  const props = three.none ? [] : three.propsAt(at);
+  const got = specFor(root, o, three, { kind, sd, at, span });
+  const ms = Math.round(performance.now() - t0);
+  const lines = [
+    `measure ${kind}: cảnh ${o.scene}, ${o.cast} từ giây ${at}; dựng cảnh three ${ms} ms`,
+  ];
+  if (three.none) lines.push(`không có cảnh three (${three.none}): đồ chỉ khai được bằng cờ số`);
+  const id = o.cast;
+  const c = sd.c;
+  const h = c.rig.height;
+  const sp = rig.sceneAt(sd.rt0, id, at, h, sd.rt0.bodies[id]);
+  const W = sp.world;
+  const under =
+    W?.seated &&
+    ((e) =>
+      rectHolds(e.role, [W.hip[0], W.hip[1] + sd.rt0.bodies[id].legHalf * W.s, W.hip[2]], 2 * W.s));
+  lines.push("vật mang vai trò (thế giới rig, y xuống):");
+  for (const role of MEASURE_ROLES[kind]) {
+    const list = entriesOf(props, role);
+    if (!list.length) {
+      lines.push(`  ${role}: không có`);
+      continue;
+    }
+    for (const e of list) {
+      const geo = Object.fromEntries(
+        Object.entries(e.role).filter(([k]) => k !== "role" && k !== "name"),
+      );
+      const mark = role === "seat" && under?.(e) ? "  ← dưới hông" : "";
+      lines.push(
+        `  ${role} \`${entryName(e.prop, e.role)}\` ${JSON.stringify(round1(geo))}${mark}`,
+      );
+    }
+  }
+  for (const p of props.filter((q) => q.errors?.length))
+    lines.push(`  lỗi vai trò của \`${p.name}\`: ${p.errors.join("; ")}`);
+  let candidates;
+  if (kind === "pour") {
+    // đích rót chọn được: người cầm món mang `vessel`, món của `items[]`, vật của cảnh three — miệng ở giây rót hết
+    const tFull = at + POUR_T.full * POUR_DURATION;
+    const names = new Set();
+    for (const m of sd.scene.cast)
+      if (m.id !== id && m.world)
+        for (const side of ["right", "left"]) {
+          const k = holdAt(m.world.hands, side, tFull, sd.marks);
+          if (k && vesselOf(sd.data.held[rig.heldBase(k.item)])) names.add(`${m.id}:${k.item}`);
+        }
+    for (const k of sd.scene.items ?? [])
+      if (vesselOf(sd.data.held[rig.heldBase(k.item)])) names.add(k.item);
+    for (const e of entriesOf(props, "vessel")) names.add(entryName(e.prop, e.role));
+    const J = rig.actJoints(c, rig.sceneAt(sd.rt0, id, tFull, h, sd.rt0.bodies[id]));
+    const B3 = rig.bones3(h);
+    const arm = (B3.upperArm + B3.foreArm) * 100 * W.s;
+    candidates = [];
+    lines.push(
+      `đích rót (\`--cup\`), miệng ở giây ${sec(tFull)}; vai phải \`${id}\` [${J.shoulderR.map(r1).join(", ")}], cánh tay + cẳng tay ${r1(arm)}:`,
+    );
+    for (const name of names) {
+      let mouth;
+      try {
+        const cup = await cupTarget(name, {
+          scene: sd.scene,
+          rt: sd.rt0,
+          data: sd.data,
+          chars: sd.chars,
+          at,
+          end: at + POUR_DURATION,
+          marks: sd.marks,
+          threeOf: async () => three,
+        });
+        mouth = cup.at(tFull);
+      } catch (e) {
+        if (!(e instanceof GenError)) throw e;
+        lines.push(`  \`${name}\`: ${e.message}`);
+        continue;
+      }
+      if (!mouth) {
+        lines.push(`  \`${name}\`: không thấy miệng ở giây ${sec(tFull)}`);
+        continue;
+      }
+      const d = len(sub(mouth, J.shoulderR));
+      candidates.push({ cup: name, mouth: mouth.map(r1), shoulder: r1(d) });
+      lines.push(
+        `  --cup ${name}: miệng [${mouth.map(r1).join(", ")}], cách vai ${r1(d)}${d > arm ? " — xa hơn cánh tay + cẳng tay" : ""}`,
+      );
+    }
+    if (!names.size)
+      lines.push(
+        "  không món, vật nào mang `vessel` — khai vai trò cho món hay vật, hay rót vào điểm x,y,z",
+      );
+  }
+  const file = got && (await saveSpec(root, o, got, lines));
+  return {
+    ok: true,
+    spec: got?.file,
+    wrote: !!file,
+    ...(candidates && { candidates }),
+    lines,
+    text: lines.join("\n"),
+  };
+}
+
 export async function genWorkspace({ kind, ...o }) {
   const k =
     GEN_KINDS[kind] ??
     fail(`\`stickman gen\` chưa có kiểu \`${kind}\`; có: ${Object.keys(GEN_KINDS).join(", ")}`);
+  if (o.measure) return genMeasure(kind, o);
   return k.run(o);
 }

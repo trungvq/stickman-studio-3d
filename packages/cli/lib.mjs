@@ -2408,13 +2408,13 @@ export const CLI_FLAGS = {
   "migrate-elbow": { bool: ["dry-run"], value: ["scene"] },
   studio: { bool: [], value: ["port", "host"] },
   gen: {
-    bool: ["force", "dry-run", "sheet", "software", "check", "clash"],
+    bool: ["force", "dry-run", "sheet", "software", "check", "clash", "measure"],
     value: [
       ...["scene", "cast", "at", "name", "cup", "style", "tilt", "pour-dir", "item"],
       ...["legs", "tuck", "feet", "back", "hands", "elbow", "top"],
       ...["table", "armrest", "backrest", "footrest"],
       ...["to", "speed", "action", "start", "radius", "turn-time", "turn-side", "hold", "track"],
-      ...["after", "blend", "way", "door", "ground", "time"],
+      ...["after", "blend", "way", "door", "ground", "time", "spec"],
       ...[
         "seat",
         "depth",

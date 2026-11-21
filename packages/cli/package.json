@@ -15,6 +15,7 @@
     "gen-pour.mjs",
     "gen-sheet.mjs",
     "gen-sit.mjs",
+    "gen-spec.mjs",
     "gen-walk.mjs",
     "lib.mjs",
     "migrate-elbow.mjs",

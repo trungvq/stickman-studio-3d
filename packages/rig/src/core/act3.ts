@@ -2402,21 +2402,34 @@ export function actHeld(c: ActCharacter, sp: ActInput): Partial<Record<"R" | "L"
 /** Người mẫu cho `reachEstimate`: người mặc đồ đầu `human` số đo mặc định */
 let sample: ActCharacter | undefined;
 
+type ReachJson = {
+  at?: readonly number[];
+  to?: BodyMark;
+  side?: "same" | "other";
+  offset?: readonly number[];
+  point?: HandPoint;
+};
+
+/** `reachEstimate` theo nội dung đích (không theo object: JSON sửa tại chỗ vẫn đúng); đầy thì xoá cả bảng */
+const estimateMemo = new Map<string, [number, number, number]>();
+const ESTIMATE_MEMO_MAX = 4096;
+
 /**
  * Cổ tay hệ thân `[tiến, y, ra ngoài]` (rig, `height = 1`) ước lượng cho một đích JSON trên người mẫu đứng thẳng, thân cúi
  * `torso`: `at` của mẫu đích theo mốc (`Reach.at`), góc suy từ đích (`reachAngles`). Người 3D giải đích trên chính người ấy, không đọc số này
  */
-export function reachEstimate(
-  r: {
-    at?: readonly number[];
-    to?: BodyMark;
-    side?: "same" | "other";
-    offset?: readonly number[];
-    point?: HandPoint;
-  },
-  torso = 0,
-): [number, number, number] {
+export function reachEstimate(r: ReachJson, torso = 0): [number, number, number] {
   if (r.at && (!r.point || r.point === "wrist")) return [r.at[0], r.at[1], r.at[2]];
+  const key = `${torso}|${r.to ?? ""}|${r.side ?? ""}|${r.point ?? ""}|${r.at ?? ""}|${r.offset ?? ""}`;
+  let w = estimateMemo.get(key);
+  if (!w) {
+    if (estimateMemo.size >= ESTIMATE_MEMO_MAX) estimateMemo.clear();
+    estimateMemo.set(key, (w = estimateOnSample(r, torso)));
+  }
+  return [w[0], w[1], w[2]];
+}
+
+function estimateOnSample(r: ReachJson, torso: number): [number, number, number] {
   if (!sample) {
     const c = defaultCharacter();
     c.palette.clad = true;

@@ -73,6 +73,10 @@ const USAGE = `stickman <lệnh> [thư mục]
                 Đồ của cảnh tìm theo vai trò (Item.roles, withRoles); bảng vai trò cần: gen <kiểu> --help
                 chung: --scene <id> --cast <người> --at <giây bắt đầu> --name <tên file> --force (ghi dù
                 không đạt, đè file không phải gen sinh) --dry-run (chỉ in)
+                thông số đo (sit, board, pour): --measure dựng cảnh three một lần, ghi
+                gen/<kiểu>-<cảnh>-<người>-<giây>.json và in đồ theo vai trò (pour: đích rót chọn được, khoảng tới
+                vai) mà không sinh; --spec <file> sinh từ file ấy, không dựng cảnh three (cảnh, held/ hay
+                stickman.world đổi từ lúc đo thì lỗi, đo lại). Không --spec thì tự đo, ghi file ấy rồi sinh
                 pour: --cup <người | người:món | món | vật | x,y,z> (vật đựng mang vai trò vessel hay điểm)
                 --style single|serve (mặc định single) --tilt <độ nghiêng hết> --pour-dir <độ hướng rót>
                 --item <bình mang vai trò pourer, khi tay phải chưa cầm gì; mặc định binh>
@@ -367,6 +371,8 @@ else if (parsed.error) {
         armrest: value("armrest"),
         backrest: value("backrest"),
         footrest: value("footrest"),
+        spec: value("spec"),
+        measure: flag("measure"),
         to: value("to"),
         speed: value("speed"),
         action: value("action"),
@@ -393,6 +399,10 @@ else if (parsed.error) {
     } catch (e) {
       if (!(e instanceof GenError)) throw e;
       console.error(`lỗi: ${e.message}`);
+      if (["sit", "board", "pour"].includes(kind) && !value("spec") && !flag("measure"))
+        console.error(
+          "thử lại nhiều lần thì đo một lần bằng --measure, rồi sinh bằng --spec <file> (không dựng cảnh three)",
+        );
       process.exitCode = 1;
     }
   }

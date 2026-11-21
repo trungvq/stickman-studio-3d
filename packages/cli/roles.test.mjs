@@ -19,10 +19,12 @@ import {
   GEN_KINDS,
   genPour as genPour0,
   genSit as genSit0,
+  genWorkspace,
   slotTable,
   stageRun,
   virtualEntries,
 } from "./gen.mjs";
+import { recordThree, replayThree, sceneKey, specOf } from "./gen-spec.mjs";
 import { POUR_STYLES } from "./gen-pour.mjs";
 import { checkScenes, checkWorkspace, worldData } from "./lib.mjs";
 
@@ -393,6 +395,99 @@ describe("check: nhóm `roles`", () => {
       ),
       JSON.stringify(rows, null, 2),
     );
+  });
+});
+
+describe("gen: thông số đo (`--measure`, `--spec`)", () => {
+  it("sinh một bước ghi thông số; `--spec` không dựng cảnh three mà ra cùng hành động; `--measure` in mặt ngồi dưới hông", async () => {
+    const dir = repo({ world: ROLE_WORLD, files: { "scenes/ngoi.json": ROLE_SCENE } });
+    const one = await genSit0({ dir, scene: "ngoi", cast: "a" });
+    assert.equal(one.spec, "gen/sit-ngoi-a-0.json");
+    const spec = JSON.parse(readFileSync(join(dir, one.spec), "utf8"));
+    assert.equal(spec.kind, "sit");
+    assert.ok(spec.props.some((p) => p.name === "ghe" && p.roles.some((r) => r.role === "seat")));
+    assert.ok(spec.world.files.includes("src/world.ts"), spec.world.files.join(", "));
+    const again = await genSit0({ dir, scene: "ngoi", cast: "a", spec: one.spec, dryRun: true });
+    assert.deepEqual(again.action, one.action);
+    assert.deepEqual(again.roles, one.roles);
+    assert.equal(again.spec, undefined);
+    const m = await genWorkspace({ kind: "sit", measure: true, dir, scene: "ngoi", cast: "a" });
+    assert.match(m.text, /seat `ghe` \{.*\} {2}← dưới hông/);
+    assert.match(m.text, /backrest `ghe`/);
+    assert.equal(m.spec, "gen/sit-ngoi-a-0.json");
+  });
+  it("cảnh, `stickman.world` hay `--at` khác lúc đo thì lỗi kèm lệnh đo lại; chỗ, track của chính người được sinh thì không", async () => {
+    const dir = repo({ world: ROLE_WORLD, files: { "scenes/ngoi.json": ROLE_SCENE } });
+    const { spec } = await genWorkspace({
+      kind: "sit",
+      measure: true,
+      dir,
+      scene: "ngoi",
+      cast: "a",
+    });
+    const call = (o = {}) => genSit0({ dir, scene: "ngoi", cast: "a", spec, dryRun: true, ...o });
+    const write = (sc) => writeFileSync(join(dir, "scenes/ngoi.json"), JSON.stringify(sc));
+    const own = structuredClone(ROLE_SCENE);
+    own.cast[0].tracks[0].name = "ngoi";
+    own.cast[0].world.at = [2, -92, 0];
+    write(own);
+    await call();
+    await assert.rejects(
+      call({ at: 0.5 }),
+      /đo từ giây 0, lệnh này từ giây 0\.5 — đo lại: .*--measure/,
+    );
+    const other = structuredClone(ROLE_SCENE);
+    other.duration = 2;
+    write(other);
+    await assert.rejects(call(), /cảnh `ngoi` .* đã đổi từ lúc đo — đo lại/);
+    write(ROLE_SCENE);
+    writeFileSync(join(dir, "src/world.ts"), `${ROLE_WORLD}\n// sửa\n`);
+    await assert.rejects(call(), /code `stickman\.world` đã đổi từ lúc đo/);
+  });
+  it("vật đứng yên giữ một bản `props`; vật dời giữ đủ `frames`, giây chưa đo lấy giây đo gần nhất", () => {
+    const at = (x) => [
+      { node: {}, name: "ghe", local: [], errors: [], roles: [{ role: "seat", at: [x, 0, 0] }] },
+    ];
+    const node = {};
+    const fake = (move) => ({
+      inputs: [],
+      propsAt: (t) => at(move ? Math.round(t * 100) : 0).map((p) => ({ ...p, node })),
+    });
+    const head = {
+      kind: "sit",
+      scene: "x",
+      cast: "a",
+      at: 0,
+      span: 0.5,
+      duration: 1,
+      key: "k",
+      world: null,
+    };
+    const still = specOf(recordThree(fake(false)), head);
+    assert.equal(still.frames, undefined);
+    assert.equal(still.props[0].node, "n0");
+    const moving = specOf(recordThree(fake(true)), head);
+    assert.deepEqual(
+      moving.frames.map((f) => f.t),
+      [0, 0.25, 0.5],
+    );
+    const R = replayThree(moving, null);
+    assert.equal(R.propsAt(0.25)[0].roles[0].at[0], 25);
+    assert.equal(R.propsAt(0.3)[0].roles[0].at[0], 25);
+    assert.deepEqual([...R.missed], [0.3]);
+  });
+  it("khoá cảnh bỏ chỗ đứng, `path`, `sit`, `floor`, track của người được sinh; người khác, món `held/` thì đổi khoá", () => {
+    const sc = structuredClone(ROLE_SCENE);
+    sc.cast.push({ id: "b", tracks: [], world: { at: [100, 0, 0], yaw: 0 } });
+    const k = sceneKey(sc, "a", {});
+    const mine = structuredClone(sc);
+    mine.cast[0].world = { s: mine.cast[0].world.s, path: [{ t: 0, at: [1, 0, 1], yaw: 0 }] };
+    mine.cast[0].tracks = [];
+    assert.equal(sceneKey(mine, "a", {}), k);
+    const theirs = structuredClone(sc);
+    theirs.cast[1].world.at = [120, 0, 0];
+    assert.notEqual(sceneKey(theirs, "a", {}), k);
+    assert.notEqual(sceneKey(sc, "a", { coc: { size: [1, 1, 1] } }), k);
   });
 });
 

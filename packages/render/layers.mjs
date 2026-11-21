@@ -125,7 +125,7 @@ const sharedWithCli = {
 async function loadEntry(root, entry, prefix, what, opts = {}) {
   const key = `${prefix}:${entry}`;
   const hit = cache.get(key);
-  if (hit && stampOf(root, hit.inputs) === hit.stamp) return hit.mod;
+  if (hit && stampOf(root, hit.inputs) === hit.stamp) return hit;
 
   const { code, inputs } = await bundle(root, entry, {
     platform: "node",
@@ -143,15 +143,16 @@ async function loadEntry(root, entry, prefix, what, opts = {}) {
     if (f.startsWith(`${prefix}-`) && join(dir, f) !== file) rmSync(join(dir, f), { force: true });
 
   const mod = await import(pathToFileURL(file).href);
-  cache.set(key, { mod, inputs, stamp: stampOf(root, inputs) });
-  return mod;
+  const out = { mod, inputs, stamp: stampOf(root, inputs) };
+  cache.set(key, out);
+  return out;
 }
 
 /** Bảng `CODE_LAYERS` của repo video, hay `[]` nếu repo không khai lớp nào. */
 export async function loadLayers(root = process.cwd()) {
   const entry = layersEntry(root);
   if (!entry) return [];
-  const layers = (await loadEntry(root, entry, "layers", "lớp vẽ code")).CODE_LAYERS;
+  const layers = (await loadEntry(root, entry, "layers", "lớp vẽ code")).mod.CODE_LAYERS;
   if (!Array.isArray(layers))
     throw new Error(`${entry} phải \`export const CODE_LAYERS\` là một mảng lớp vẽ code`);
   return layers;
@@ -231,8 +232,9 @@ class BlankPath2D {
 
 /**
  * Cảnh three của repo video, hay `null` nếu repo không khai `stickman.world`: `{ worldOf, collide,
- * colliders, U, heldHands, heldCarries, legacyHolds, rig }` — `worldOf` của entry, các thứ sau của chính bản rig mà entry
- * nạp (`heldHands`, `heldCarries`, `legacyHolds` trống khi bản rig ấy chưa có), `rig` là cả bản rig ấy. Đặt `Path2D`
+ * colliders, U, heldHands, heldCarries, legacyHolds, rig, inputs }` — `worldOf` của entry, các thứ sau của chính bản rig mà
+ * entry nạp (`heldHands`, `heldCarries`, `legacyHolds` trống khi bản rig ấy chưa có), `rig` là cả bản rig ấy, `inputs` là
+ * các file nguồn đã gói (đường dẫn tương đối với `root`). Đặt `Path2D`
  * rỗng vào `globalThis` khi Node không có. `bare`: chỉ nạp `@stickman3d/rig` của repo (cùng một bản `three` với cảnh
  * three của repo), không chạy `stickman.world` dù repo có khai; `worldOf` trả `null`, `bare: true` — cảnh dựng tạm (sân
  * khấu thử của `stickman gen`, `checkScenes({ spec })`) dựng bằng `rig` ấy. Hợp đồng ở docs/10-lop-ve-code.md#đo-trên-cảnh-three
@@ -241,7 +243,7 @@ export async function loadWorld(root = process.cwd(), { bare = false } = {}) {
   const entry = bare ? null : worldEntry(root);
   if (!entry && !bare) return null;
   globalThis.Path2D ??= BlankPath2D;
-  const mod = await loadEntry(
+  const { mod, inputs } = await loadEntry(
     root,
     entry ?? join(root, "package.json"),
     entry ? "world" : "rig",
@@ -269,6 +271,7 @@ export * from "@stickman3d/rig";`,
     heldCarries: mod.heldCarries,
     legacyHolds: mod.legacyHolds,
     rig: mod,
+    inputs,
   };
 }
 
