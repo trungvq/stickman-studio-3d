@@ -37,6 +37,14 @@ export function newCanvas(w: number, h: number): HTMLCanvasElement | OffscreenCa
   return c as unknown as HTMLCanvasElement;
 }
 
+/**
+ * Context 2D của canvas texture, để ở bộ nhớ CPU (`willReadFrequently`): canvas tăng tốc giữ VRAM tới khi GC thu nó, mà GC
+ * không thấy bộ nhớ GPU, nên dựng lại sân khấu qua từng shot thì VRAM leo dần.
+ */
+export function context2D(canvas: HTMLCanvasElement | OffscreenCanvas): CanvasRenderingContext2D {
+  return (canvas as HTMLCanvasElement).getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
+}
+
 class BlankPath {
   addPath() {}
   moveTo() {}

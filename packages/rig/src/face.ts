@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { newCanvas, path2D } from './canvas';
+import { context2D, newCanvas, path2D } from './canvas';
 import { DEFAULT_FACE } from './core/constants';
 import { blushLevel, blushMarks, browMarks, CHIBI, chibiShape, EYE_R, eyeBlink, eyeMarks, eyeShape, faceRest, humanMouthGlyph, humanMouthMarks, humanMouthTop, lookStep, mouthMark, mouthPose, mouthShape, mouthStep, moustacheMark, moustacheTop, wrinkleMarks, type FaceInk, type FaceMark, type FaceRest, type EyeShape, type EyeShapeKind, type Look, type MouthShape, type MouthShapeKind, type MoustacheSpec, type WrinkleSpec } from './core/face';
 import { FACE_R, faceSurface } from './core/humanHead';
@@ -196,7 +196,7 @@ function mouthSquash(r: number, scale: THREE.Vector3, cy: number) {
 /** Một lớp canvas phủ vùng `box` px đầu trên mặt trước sọ; `begin` xoá canvas và đặt hệ px đầu */
 function layer(r: number, scale: THREE.Vector3, human: boolean, box: Box, order: number) {
   const canvas = newCanvas(box.w * TEXEL, box.h * TEXEL);
-  const g = canvas.getContext('2d') as Ctx;
+  const g = context2D(canvas) as Ctx;
   const tex = new THREE.CanvasTexture(canvas as HTMLCanvasElement);
   tex.anisotropy = 8;
   tex.premultiplyAlpha = true;

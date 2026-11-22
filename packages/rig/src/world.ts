@@ -177,6 +177,11 @@ function heldIntentOf(a: HoldAim): HeldIntent | undefined {
   return undefined;
 }
 const fromThree = (p: THREE.Vector3): Vec3 => [p.x / U, -p.y / U, -p.z / U];
+/** Dựng ngoài `buildWorld`: closure trong thân nó chung context với các closure khác của hàm, giữ cả thế giới qua `rt` */
+const lensAtOf = (lens: (t: number) => Lens | undefined) => (t: number) => {
+  const l = lens(t);
+  return l && lensRadians(l);
+};
 /** Liên kết của lần cầm ra ma trận three */
 const m4 = (G: GripFrame) => new THREE.Matrix4().set(G.R[0], G.R[1], G.R[2], G.p[0], G.R[3], G.R[4], G.R[5], G.p[1], G.R[6], G.R[7], G.R[8], G.p[2], 0, 0, 0, 1);
 
@@ -194,7 +199,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
   rt.chars = { ...Object.fromEntries(cast.map((c) => [c.id, base(c)])), ...rt.chars };
   // luật đo trên hình của `check` đọc ống kính vẽ ra qua `lensAt`
   const lensOf = spec.lens;
-  if (lensOf) rt.lensAt = (t) => { const l = lensOf(t); return l && lensRadians(l); };
+  if (lensOf) rt.lensAt = lensAtOf(lensOf);
   else delete rt.lensAt;
   const frozen = (c: CastMember) => (still ? still.includes(c.id) : c.world.sit);
   const seats = cast.filter(frozen).map((c) => ({ c, ac: acting(c.id, 0) }));

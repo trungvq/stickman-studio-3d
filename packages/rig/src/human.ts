@@ -6,7 +6,7 @@ import { fingerVec, HAND_DOF, HAND_POSES, HAND_REST, type HandPose } from './cor
 import { handSkin, skinHand, smoothNormals, type HandSkin } from './core/handMesh';
 import { FOOT_FREE, SHOE_CLEAR, shoeCut, shoeFit, shoeForm, shoeToes, type ShoeForm, type ShoeSection } from './core/shoe';
 import { humanNeckAt } from './core/torso';
-import { newCanvas } from './canvas';
+import { context2D, newCanvas } from './canvas';
 import { G } from './npr';
 
 // Khối của người 3D mặc đồ (`palette.clad`) và đầu `head.form: "human"`: đầu có quai hàm, tai, cổ; bàn tay, giày, khối
@@ -97,7 +97,7 @@ const earInk = new Map<string, THREE.ShaderMaterial>();
 /** Nét chữ C mở về phía mặt trên canvas phủ mặt ngoài tai: x theo z, y theo −y của tai đơn vị; chỉ đọc alpha */
 function earCurl() {
   const E = HUMAN_HEAD.ear, W = 128, H = Math.round((W * E.h) / E.w);
-  const canvas = newCanvas(W, H), g = canvas.getContext('2d') as CanvasRenderingContext2D;
+  const canvas = newCanvas(W, H), g = context2D(canvas);
   g.lineCap = 'round';
   g.lineWidth = (EAR_STROKE / (2 * E.w)) * W;
   g.beginPath();

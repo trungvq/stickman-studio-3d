@@ -39,6 +39,33 @@ function gpuName(renderer: THREE.WebGLRenderer) {
   return String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
 }
 
+/**
+ * `dispose()` mọi vật liệu, lưới, texture trong `scene` để renderer gỡ listener `dispose` nó gắn lên chúng: vật liệu, lưới
+ * cache cấp module dùng chung mọi sân khấu, listener còn thì giữ renderer và context của sân khấu đã gỡ. Chúng vẫn dùng lại
+ * được, renderer khác vẽ tới thì nạp lại. Texture của render target (bóng, độ sâu, có thể của sân khấu khác qua `G`) không đụng.
+ */
+function release(scene: THREE.Scene) {
+  const mats = new Set<THREE.Material>(), geos = new Set<THREE.BufferGeometry>(), texs = new Set<THREE.Texture>();
+  const tex = (v: unknown): void => {
+    if (Array.isArray(v)) return v.forEach(tex);
+    const t = v as THREE.Texture | null;
+    if (t?.isTexture && !t.isRenderTargetTexture && !(t as THREE.DepthTexture).isDepthTexture) texs.add(t);
+  };
+  scene.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (m.geometry?.isBufferGeometry) geos.add(m.geometry);
+    if (m.material) for (const x of Array.isArray(m.material) ? m.material : [m.material]) mats.add(x);
+    if ((o as THREE.InstancedMesh).isInstancedMesh) o.dispatchEvent({ type: 'dispose' } as never);
+  });
+  tex(scene.background);
+  for (const m of mats) {
+    for (const v of Object.values(m)) tex(v);
+    const u = (m as THREE.ShaderMaterial).uniforms;
+    if (u) for (const x of Object.values(u)) tex(x?.value);
+  }
+  for (const x of [...mats, ...geos, ...texs]) x.dispose();
+}
+
 /** `G` và đèn lúc nạp package: sân khấu mới bắt đầu từ đây, không thừa đèn của sân khấu dựng trước nó */
 const BASE = capture(), BASE_LIGHTS = captureLights();
 /** Sân khấu đang giữ `G`; `save` chép `G` và đèn về sân khấu ấy trước khi sân khấu khác lấy */
@@ -94,7 +121,7 @@ export interface Stage {
   draw(t: number, view?: FrameView): void;
   /** Vẽ khung ở giây `t` rồi chép sang canvas 2D (`into` hay canvas mới): ảnh tĩnh, nền, texture */
   still(t: number, view?: FrameView, into?: HTMLCanvasElement | OffscreenCanvas): HTMLCanvasElement | OffscreenCanvas;
-  /** Renderer tự dựng thì huỷ và bỏ context ngay, không chờ GC */
+  /** Renderer tự dựng thì thả tài nguyên GPU của `scene`, huỷ renderer và bỏ context ngay, không chờ GC */
   dispose(): void;
 }
 
@@ -194,6 +221,9 @@ export function createStage(o: StageOptions): Stage {
       if (active === token) active = null;
       pipeline.dispose();
       if (own) {
+        // drawing buffer cỡ khung (kèm bản `preserveDrawingBuffer`) thu trước, mất context rồi thì không đổi cỡ được
+        renderer.setSize(1, 1, false);
+        release(scene);
         renderer.dispose();
         renderer.forceContextLoss();
       }

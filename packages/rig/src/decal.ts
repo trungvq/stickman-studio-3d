@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { Figure } from './stickman';
 import { toThree, U, type Vec3 } from './khoi';
-import { newCanvas } from './canvas';
+import { context2D, newCanvas } from './canvas';
 import { npr, surface, type SurfaceOptions } from './npr';
 
 // Chữ và hình nằm trên vật trong cảnh: texture vẽ đồng bộ theo `t` trên canvas 2D, dán lên mặt phẳng (hay hơi cong)
@@ -34,7 +34,7 @@ const keyOf = (k: unknown) => (k !== null && typeof k === 'object' ? JSON.string
  */
 export function canvasTexture(w: number, h: number, draw: (ctx: Ctx2D, t: number) => void, o: CanvasTextureOptions = {}): CanvasSurface {
   const canvas = newCanvas(w, h);
-  const ctx = canvas.getContext('2d') as Ctx2D;
+  const ctx = context2D(canvas) as Ctx2D;
   const texture = new THREE.CanvasTexture(canvas as HTMLCanvasElement);
   texture.anisotropy = o.anisotropy ?? 16;
   texture.minFilter = THREE.LinearMipmapLinearFilter;
