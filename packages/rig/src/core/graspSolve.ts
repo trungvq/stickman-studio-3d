@@ -2230,7 +2230,8 @@ export function chooseMissing(
   let bestDefs: Defs = {};
   // ứng viên rời tốt nhất của biến thể mặc định: lưới liên tục chạy cả quanh nó
   let home: [Cand, Defs] | undefined;
-  // `platform`: hướng ngón gắn với cạnh, lưới liên tục chạy quanh ứng viên rời tốt nhất của từng cạnh
+  // `platform` (hướng ngón gắn với cạnh), `card` (cạnh đắt ở trường liên tục mặc định có thể rẻ nhất trên lưới): lưới liên
+  // tục chạy quanh ứng viên rời tốt nhất của từng cạnh
   const byEdge = new Map<GraspChoice["edge"], [Cand, Defs]>();
   // ứng viên rời tốt nhất trùng trường rời của lựa chọn đang giữ: lưới liên tục chạy cả quanh nó
   let kept: [Cand, Defs] | undefined;
@@ -2254,7 +2255,7 @@ export function chooseMissing(
       (!kept || x.cost < kept[0].cost - 1e-12)
     )
       kept = [x, defs];
-    if (h.group === "platform") {
+    if (h.group === "platform" || h.group === "card") {
       const e = byEdge.get(x.choice.edge);
       if (!e || x.cost < e[0].cost - 1e-12) byEdge.set(x.choice.edge, [x, defs]);
     }

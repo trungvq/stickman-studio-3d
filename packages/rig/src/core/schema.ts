@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { INK, RIG } from "./constants";
+import { INK, LIMB_CURVE, RIG } from "./constants";
 import {
   EYE_SHAPE_FIELDS,
   EYE_SHAPE_KINDS,
@@ -871,7 +871,7 @@ export const CharacterSchema = z.object({
       /** Màu đế giày; bỏ trống là màu đế của kiểu (`SHOE_STYLES[…].soleColor`) hay màu giày sẫm lại */
       sole: z.string().optional(),
       /** Độ cong nét chi `0..1`; `0` là hai đoạn thẳng gãy ở khuỷu, gối. docs/01-rig.md#vẽ-chi */
-      limbCurve: z.number().min(0).max(1).default(1),
+      limbCurve: z.number().min(0).max(1).default(LIMB_CURVE),
     })
     .prefault({}),
   face: z

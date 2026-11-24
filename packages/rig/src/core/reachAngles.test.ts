@@ -7,7 +7,10 @@ const D = Math.PI / 180;
 const wrist = ([a0, a1]: readonly number[]) => {
   const shY = -RIG.torso + 20;
   const e = [RIG.upperArm * Math.sin(a0 * D), shY + RIG.upperArm * Math.cos(a0 * D)];
-  return [e[0] + RIG.foreArm * Math.sin((a0 + a1) * D), e[1] + RIG.foreArm * Math.cos((a0 + a1) * D)];
+  return [
+    e[0] + RIG.foreArm * Math.sin((a0 + a1) * D),
+    e[1] + RIG.foreArm * Math.cos((a0 + a1) * D),
+  ];
 };
 
 // Góc tay suy từ đích là nền FK của đoạn hoà từ dáng buông (`stand-3d`, vai ~−5): góc vai ghi theo phía giơ về trước,
@@ -24,7 +27,11 @@ describe("reachAngles", () => {
   it("mọi đích trong tầm: vai trong [−120, 240), cổ tay FK vẫn tới đích", () => {
     for (const f of [-40, -10, 0, 20, 50])
       for (const y of [-190, -150, -125, -60, -20])
-        for (const elbow of [undefined, [0.2, -0.2, 1] as [number, number, number], [-0.3, 0.5, 1] as [number, number, number]]) {
+        for (const elbow of [
+          undefined,
+          [0.2, -0.2, 1] as [number, number, number],
+          [-0.3, 0.5, 1] as [number, number, number],
+        ]) {
           const a = reachAngles({ at: [f, y, 0], elbow });
           expect(a[0]).toBeGreaterThanOrEqual(-120);
           expect(a[0]).toBeLessThan(240);

@@ -152,10 +152,10 @@ describe("tầm với của tay", () => {
     expect(Math.hypot(f.armR[2][0] - SH_N[0], f.armR[2][1] - SH_N[1])).toBeLessThan(toiDinhDau);
   });
 
-  it("stretch 1.4 vươn qua đỉnh đầu, vẫn trên tia vai→đỉnh đầu", () => {
-    expect((RIG.upperArm + RIG.foreArm) * 1.4).toBeGreaterThanOrEqual(toiDinhDau);
+  it("stretch 1.5 vươn qua đỉnh đầu, vẫn trên tia vai→đỉnh đầu", () => {
+    expect((RIG.upperArm + RIG.foreArm) * 1.5).toBeGreaterThanOrEqual(toiDinhDau);
 
-    const P: Pose = { ...POSES.idle, ar: [theta, 0, 0], stretch: [1, 1, 1.4, 1.4, 1, 1, 1, 1] };
+    const P: Pose = { ...POSES.idle, ar: [theta, 0, 0], stretch: [1, 1, 1.5, 1.5, 1, 1, 1, 1] };
     const w = computeFigure(C, P).armR[2];
     const dx = w[0] - SH_N[0];
     const dy = w[1] - SH_N[1];

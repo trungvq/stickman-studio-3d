@@ -5,13 +5,16 @@ export const RIG = {
   torso: 120,
   neck: 8,
   headH: 130,
-  upperArm: 67,
+  upperArm: 57,
   foreArm: 53,
   thigh: 78,
   shin: 92,
   stroke: 12,
   footY: 170,
 } as const;
+
+/** `palette.limbCurve` mặc định: độ cong nét chi `0..1`. docs/01-rig.md#vẽ-chi */
+export const LIMB_CURVE = 0.5;
 
 /** Đơn vị rig trong một mét: người cao 428 ≈ 1,71 m. docs/01-rig.md */
 export const RIG_PER_METRE = 250;

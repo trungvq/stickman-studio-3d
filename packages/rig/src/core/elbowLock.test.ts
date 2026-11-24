@@ -288,7 +288,7 @@ describe("lần cầm theo mốc (`keyed`)", () => {
   });
 
   it("mốc khoá rồi mốc không khoá: `φ` = `φ` theo mốc kéo về hướng khoá theo phần khoá, đường ngắn qua ±180", () => {
-    // khoá gần ngược khuỷu tự do: `φ` theo mốc và hướng khoá nằm hai bên ±180 ở giữa đoạn (lệch 150–160 với tay 67/53)
+    // khoá gần ngược khuỷu tự do: `φ` theo mốc và hướng khoá nằm hai bên ±180 ở giữa đoạn (lệch 168–170 với tay 57/53)
     const e = dirAt(free, 0, report(free, 1).phi + 155);
     const rt = runtime(withElbow(HANDS, [e]), ITEMS);
     const [pa, pb] = [report(rt, 0).phi, report(rt, 1).phi];

@@ -805,9 +805,10 @@ nắp; dáng mới `claw`). Lựa chọn: hướng tiếp cận, biến thể. M
   của `phone-ear-3d` bộ chung: `thumb: "right"`, `tilt: 2` (`0` thì ngón cái mất lực đối, `3`–`4` da lún, từ `5` cổ tay chạm
   giới hạn khi đầu quay về phía máy), màn vào má `face: { axis: "screen", toward: [0, 0, -1] }`, đầu loa ra sau và lên dọc
   đường miệng → tai `roll: { axis: "top", toward: [-0.9, -0.44, 0] }`, cả hai `frame: "head"` ([01](01-rig.md#món-cầm-tay)),
-  tay `to: "ear"`, `offset [33, 19, 11]`, `point: "grip"`, khuỷu rig giải. Bốn nhân vật mẫu, đầu quay −30…40°, gật −20…14°:
-  màn lệch hướng vào đầu dưới 1°, trục máy lệch đường tai – miệng dưới 1°, loa cách tai dưới 2,5, cổ tay không chạm giới hạn
-  (cách từ 2,5° trở lên); quay −40° (về phía máy) thì người to chạm giới hạn lệch cổ tay, ý định nhường dưới 0,5°.
+  tay `to: "ear"`, `offset [33, 19, 11]`, `point: "grip"`, khuỷu rig giải. Bốn nhân vật mẫu, đầu quay −40…40°, gật −20…14°:
+  màn lệch hướng vào đầu dưới 1°, trục máy lệch đường tai – miệng dưới 1°, loa cách tai dưới 2,5, trừ hai góc: ngửa −20 quay
+  40° tai ngoài tầm tay (khe dưới 0,3), cổ tay chạm giới hạn lệch, ý định nhường dưới 0,6°, trục lệch dưới 4,5°; cúi 14 quay
+  −40° (về phía máy) người nặng, người mẫu nữ chạm giới hạn cổ tay, ý định nhường dưới 3°, trục lệch dưới 7°.
   Hay ý định màn vào má `{ mark: "head" }` để rig giữ trục (gạch dưới).
 - **Áp tai không khai `roll`** (mọi nhóm, tay dẫn): mặt món quay vào đầu chính người cầm (`face` về `{ mark }` là `head`,
   `ear` hay `cheek`, không `side: "other"`), mốc tay đặt ở tai hay má (`to: "ear"` / `"cheek"`) và món khai `top` (đầu loa)
@@ -1193,7 +1194,8 @@ cap(x) = WRIST_CAP · tanh(x / WRIST_CAP)
   điểm xuất phát và hai mép cửa sổ — chuỗi mẫu (`φ_trước` của mẫu này là `φ` mẫu trước) không dao động. `solvePhi` 23 lần
   thử (22 nút và điểm lấy), mỗi lần chỉ dựng hai đoạn tay và đọc góc cổ tay.
 - **Lựa chọn chỗ cầm** (`chooseMissing`) cộng `Efull` — `E` ở `φ` đã giải với giá cổ tay không trần — nên lựa chọn chỉ với tới
-  bằng cổ tay vượt xa vẫn đắt. Ứng viên rời sát ứng viên tốt nhất (dưới `ROOT_NEAR` `0,5`) cũng được chạy lưới liên tục.
+  bằng cổ tay vượt xa vẫn đắt. Ứng viên rời sát ứng viên tốt nhất (dưới `ROOT_NEAR` `0,5`) cũng được chạy lưới liên tục; `platform` và `card`
+  chạy lưới quanh ứng viên rời tốt nhất của từng cạnh, vì ở trường liên tục mặc định một cạnh có thể đắt dù trên lưới nó rẻ nhất.
 - **Khuỷu khoá** (`elbowLock` của mốc `hold`, [03](03-scene.md#đích-bàn-tay-thế-giới)): mẫu có phần khoá `1` không tìm `φ`
   mà lấy `φ = φ(elbow)` — hướng `elbow` của lần cầm ở giây ấy (`runLock`: đều trên mặt cầu giữa hai mốc `hold` kề, mốc không
   khai lấy của mốc kia; mốc `hold` không có `at` nên `elbow` là hệ thân, quy ra thế giới bằng thân của chính mẫu) chiếu như `φ₀`;

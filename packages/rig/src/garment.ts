@@ -5,7 +5,7 @@ import { hullMaterial, npr, surface } from './npr';
 import { canvasTexture } from './decal';
 import { path2D } from './canvas';
 import { WAKABA, type PrintArt, type PrintPart } from './core/print';
-import { APRON_BAND, APRON_FLOOR, APRON_KNEEL_EASE, APRON_LEG, APRON_LIFT, D, RIG, SKIRT_EASE, TORSO_DEPTH } from './core/constants';
+import { APRON_BAND, APRON_FLOOR, APRON_KNEEL_EASE, APRON_LEG, APRON_LIFT, D, LIMB_CURVE, RIG, SKIRT_EASE, TORSO_DEPTH } from './core/constants';
 import { apronBow, apronOf, drape, drapeAt, drapeFloor, drapeLength, hemHang, hemReach, kneelOn, sectionFront, wrapHemEdge, wrapHemOf } from './core/hem';
 import type { Garment, Skirt } from './core/schema';
 import { profileAt, skirtCover, skirtFall, skirtSpread, skirtTube } from './core/skirtShape';
@@ -572,9 +572,9 @@ export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thi
   // chân buông: mọi khúc đùi, gối, ống chân còn cao hơn gấu nằm trong váy, cả gối nhô ra khi bước
   if (legs && hang > 0.05)
     for (const leg of legs)
-      for (const p of legRings(leg, lr, curve ?? 1, SKIRT_EASE - inset)) if (p[1] <= yH) pts.push(p);
+      for (const p of legRings(leg, lr, curve ?? LIMB_CURVE, SKIRT_EASE - inset)) if (p[1] <= yH) pts.push(p);
   const [s0, s1] = LAP_SEAT.map((a) => Math.cos(a * D)), seat = Math.min(1, Math.max(0, (s0 - hang) / (s0 - s1)));
-  if (legs && seat > 0) legs.forEach((leg, i) => pts.push(...lapRings(leg, covers[i], tubes[i], lr, curve ?? 1, SKIRT_EASE - inset, seat)));
+  if (legs && seat > 0) legs.forEach((leg, i) => pts.push(...lapRings(leg, covers[i], tubes[i], lr, curve ?? LIMB_CURVE, SKIRT_EASE - inset, seat)));
   // bao lồi của three hỏng khi điểm trùng hay gần trùng (vòng gối của `legRings` và của lòng váy): gộp theo lưới `0,01` px
   const seen = new Set<string>();
   let geo: THREE.BufferGeometry = new ConvexGeometry(pts.filter((p) => { const k = p.map((v) => Math.round(v * 100)).join(); return !seen.has(k) && !!seen.add(k); }).map((p) => v3(p.map((v) => Math.round(v * 100) / 100) as Vec3)));
@@ -767,7 +767,7 @@ function hipHull(o: Omit<SkirtOptions, 'thighs'>, pose: HemPose, lift: number, k
     const angle = Math.acos(Math.max(-1, Math.min(1, td[1] / (len3(td) || 1))));
     const [cT, cS] = hemReach(g, h, angle, lt, ls);
     hang += hemHang(angle) / pose.legs.length;
-    const [thigh, shin] = legCurves(leg, o.curve ?? 1);
+    const [thigh, shin] = legCurves(leg, o.curve ?? LIMB_CURVE);
     // quỳ (`kneelOn`): vạt buông qua gối xuống sàn, khối trùm dần hết đùi và đầu gối tròn
     const lT = len3(td) || 1, cK = cT + (lT - cT) * kneel;
     const e1 = tube(thigh, Math.min(1, cK / lT), r0, r1);

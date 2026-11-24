@@ -94,17 +94,17 @@ type Choose = Record<
 // ca 2: prototype chọn `slant −30` với khuỷu gập ngược vào trong (φ −80, `inward` 0,52); `W_IN` đổi sang `slant 30`,
 // khuỷu ra ngoài (docs/11-nhom-cam.md § Khuỷu tự nhiên). Ca 4: prototype cầm cạnh dưới
 // ở `along` 0,75 (góc bên kia tay phải); giá góc cùng bên (`SIDE_W`) kéo về giữa cạnh. Ca 1, 3, tay trái ca 4: khuỷu theo
-// khuỷu ưu tiên (`elbowPref`) thay khuỷu dạng ra của prototype (φ 55–85); ca 3 vì thế ngón nghiêng. Cổ tay đo trên rig với
-// tay 67/53 (prototype đo với tay 62/58)
+// khuỷu ưu tiên (`elbowPref`) thay khuỷu dạng ra của prototype (φ 55–85); ca 3 vì thế ngón nghiêng và cầm ở `along` 0,75 thay
+// giữa cạnh. Cổ tay đo trên rig với tay 57/53 (prototype đo với tay 62/58)
 const choose = fx.ca.choose as unknown as Choose;
 const c3 = (h: Choose[string]["hands"][number]) => ({
   ...h,
-  rig: { ...h.rig, slant: 30 },
-  wrist: [-47.4, 17.2, 0.1],
+  rig: { ...h.rig, slant: 30, along: 0.75 },
+  wrist: [-53.3, 15.4, -2.5],
 });
 const CHOOSE: Choose = {
   ...choose,
-  c1: { ...choose.c1, hands: [{ ...choose.c1.hands[0], wrist: [-76.8, -22.1, -7.6] }] },
+  c1: { ...choose.c1, hands: [{ ...choose.c1.hands[0], wrist: [-75.8, -8.4, -7.5] }] },
   c3: { ...choose.c3, hands: choose.c3.hands.map(c3) },
   c2: {
     item: "c2",
@@ -113,7 +113,7 @@ const CHOOSE: Choose = {
         hand: "right",
         given: { edge: "bottom" },
         rig: { variant: "pinch", thumb: "front", along: 0.25, slant: 30 },
-        wrist: [-86.8, -21.1, -7.3],
+        wrist: [-86.1, -9.5, -7.1],
       },
     ],
   },
@@ -123,9 +123,9 @@ const CHOOSE: Choose = {
       {
         ...choose.c4.hands[0],
         rig: { ...choose.c4.hands[0].rig, along: 0.5 },
-        wrist: [-106.3, 7.9, -17.8],
+        wrist: [-107, 18.3, -21],
       },
-      { ...choose.c4.hands[1], wrist: [14.1, 33.4, -11.7] },
+      { ...choose.c4.hands[1], wrist: [20.3, 27.2, 2.1] },
     ],
   },
 };
@@ -489,10 +489,10 @@ describe("chooseMissing `card`", () => {
   });
 
   it("thẻ nằm phẳng trên mặt ngang trước bụng: rig chọn `edges`, bàn tay phía mặt trên, ngón cái ở mép gần, `along` 0,5, cổ tay không vượt giới hạn; `lateral` đắt hơn cả khi cộng `VARIANT_COST` cho `edges`", () => {
-    // mặt trước ngửa, mép trên ra xa người cầm; hông người mẫu ở [250, −180, 506]
+    // mặt trước ngửa, mép trên ra xa người cầm; hông người mẫu ở [250, −180, 506]; dưới hông thì ngoài tầm tay
     const R = fromColumns([1, 0, 0], [0, -1, 0], [0, 0, -1]);
     for (const P of [
-      [250, -175, 560],
+      [250, -185, 560],
       [250, -200, 580],
     ] as V3[])
       for (const side of [RIGHT, LEFT]) {
@@ -665,19 +665,19 @@ describe("chooseMissing: giá biến thể", () => {
 
   // bảng đứng: `flat` rẻ hơn `pinch`, biến thể khác cộng 0,5 nên rig vẫn chọn `pinch`; ngửa 20° thì `pinch` rẻ hơn sẵn
   it.each([
-    ["đứng", [200, -230, 560], 0, 9, true],
-    ["ngửa 20°", [200, -300, 610], 20, 18, false],
+    ["đứng", [200, -230, 560], 0, true],
+    ["ngửa 20°", [200, -300, 610], 20, false],
   ] as const)(
     "đọc ngang ngực, bảng %s: rig chọn `pinch` (biến thể khác cộng 0,5)",
-    (_, P, a, grid, flatCheaper) => {
+    (_, P, a, flatCheaper) => {
       const pose = reading([...P], a);
       expect(at(pose, "flat").cost < at(pose, "pinch").cost).toBe(flatCheaper);
       const sol = at(pose);
       expect(sol.choice.variant).toBe("pinch");
       expect(sol.by.variant).toBe("rig");
       expect(devOf(sol)).toBeLessThan(0.05);
-      // lưới liên tục quanh `pinch` tốt nhất khi ứng viên rời tốt nhất là biến thể khác, và quanh một ứng viên sát (`ROOT_NEAR`)
-      expect(sol.candidates).toBe(24 + grid + 9);
+      // lưới liên tục chỉ quanh `pinch` tốt nhất: không ứng viên rời nào sát nó (`ROOT_NEAR`)
+      expect(sol.candidates).toBe(24 + 9);
     },
   );
 
@@ -855,9 +855,9 @@ describe("chooseMissing: vành đĩa", () => {
     expect(rim(dish())).toBe("top");
     expect(rim(dish(false))).toBe("bottom");
     // tấm 4 cạnh + đĩa 12 góc, một mặt; rồi `along` 3 × `slant` 3 quanh ứng viên tốt nhất và hai ứng viên sát (`ROOT_NEAR`);
-    // `pinch` hai mặt, không ứng viên nào sát ứng viên tốt nhất
+    // `pinch` hai mặt, một ứng viên sát ứng viên tốt nhất
     expect(up.candidates).toBe(16 + 9 * 3);
-    expect(at(dish(), RIGHT, { variant: "pinch" }).candidates).toBe(16 * 2 + 9);
+    expect(at(dish(), RIGHT, { variant: "pinch" }).candidates).toBe(16 * 2 + 9 * 2);
     expect(at(dish(), RIGHT, { variant: "rim", thumb: "bottom" }).choice.thumb).toBe("bottom");
     expect(at(dish(), RIGHT).choice.thumb).toBe("top");
   });

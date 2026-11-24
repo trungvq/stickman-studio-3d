@@ -22,7 +22,7 @@ khuỷu gập ra ngoài — `armFoldProblems` kêu ở `check` và `validate`. C
 
 **`palette.limbCurve` chỉ làm tròn khuỷu và gối.** Điểm hai đầu và tiếp tuyến ở
 hai đầu của chi y hệt đoạn thẳng, nên đồ cầm tay — treo vào cổ tay — không cần biết
-tới độ cong; đừng bù trừ gì cho nó. Mặc định `1`; hạ về `0` thì chi trở lại hai đoạn
+tới độ cong; đừng bù trừ gì cho nó. Mặc định `0,5`; hạ về `0` thì chi trở lại hai đoạn
 thẳng. Xem [01](01-rig.md#vẽ-chi).
 
 **`stretch` là một kênh riêng, không phải số trong tuple tay.** Số thứ tư của

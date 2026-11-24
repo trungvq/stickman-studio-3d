@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { buildSockets, dress, headFit, newGear, type Carrying, type EquipState, type Gear, type Holding, type ItemFactories, type Sockets } from './attach';
-import { D, DEFAULT_FACE } from './core/constants';
+import { D, DEFAULT_FACE, LIMB_CURVE } from './core/constants';
 import type { FaceState } from './core/types';
 import { faceRig, type FaceRig, type FaceShape } from './face';
 import { apronTie, clothMaterial, paint, sameColor, sculptHipHem, sculptSkirt, sculptTorso, skinLook, type HemLeg, type SkirtOptions } from './garment';
@@ -298,7 +298,8 @@ function tuck(lower: THREE.Mesh, ankle: THREE.Object3D) {
   if (!T) return;
   _tk.compose(ankle.position, ankle.quaternion, ONE);
   _ti.copy(_tk).invert();
-  for (const [geo, back] of [[lower.geometry, T.back], ...((lower.userData.covers ?? []) as Cover[]).map((c) => [c.geo, T.back * c.k - (c.grow?.[1] ?? 0)])] as [THREE.BufferGeometry, number][]) {
+  // ống phủ vòng dày hơn ống chân: dải lùi gấp đôi, bắt đầu dưới cổ giày, nên mặt giữa hai vòng không cắt vào ống chân
+  for (const [geo, back, lo] of [[lower.geometry, T.back, T.collar], ...((lower.userData.covers ?? []) as Cover[]).map((c) => [c.geo, T.back * c.k - (c.grow?.[1] ?? 0), T.collar - TUCK_BLEND])] as [THREE.BufferGeometry, number, number][]) {
     const pos = geo.attributes.position as THREE.BufferAttribute;
     let low = T.y0;
     for (let i = 0; i < pos.count; i++) low = Math.min(low, _tv.fromBufferAttribute(pos, i).applyMatrix4(_ti).y);
@@ -309,7 +310,7 @@ function tuck(lower: THREE.Mesh, ankle: THREE.Object3D) {
       const y = _tv.y, z = _tv.z;
       if (y < T.y0) _tv.y = T.y0 + (y - T.y0) * k;
       if (z < back && y < T.collar + TUCK_BLEND) {
-        const u = Math.min(1, Math.max(0, (y - T.collar) / TUCK_BLEND));
+        const u = Math.min(1, Math.max(0, (y - lo) / (T.collar + TUCK_BLEND - lo)));
         _tv.z = z + (back - z) * (1 - u * u * (3 - 2 * u));
       }
       if (_tv.y === y && _tv.z === z) continue;
@@ -732,7 +733,7 @@ export function stickman(o: StickmanOptions): Figure {
 }
 
 function stickmanBuild(o: StickmanOptions): Figure {
-  const { rig, skin = '#f0d9b8', garment, color, accent, skirt, skirtColor = color, hair, hairColor = '#2a1c15', glasses = false, glassesColor, faceShape, face, seed = 0, seated = false, limbCurve = 1, lod = 'full', items, itemSpecs, equip } = o;
+  const { rig, skin = '#f0d9b8', garment, color, accent, skirt, skirtColor = color, hair, hairColor = '#2a1c15', glasses = false, glassesColor, faceShape, face, seed = 0, seated = false, limbCurve = LIMB_CURVE, lod = 'full', items, itemSpecs, equip } = o;
   const clad = !!o.clad, human = o.headForm === 'human';
   const { sleeve: sleeveWidth, trouser: trouserWidth } = limbWidths(o);
   // người `clad`: nửa bề dày chi như `limbHalf` của lõi (gồm viền), nên người ngồi nằm đúng trên mặt ghế

@@ -16,7 +16,7 @@ Gốc toạ độ đặt ở **chậu hông** (pelvis). Trục y hướng xuốn
 | Thân (hông → vai) | 120 | |
 | Đùi | 78 | Giữa tỉ lệ người Nhật (`72`) và bảng nhân trắc phương Tây (`85`), quy về thân hông → vai `100` |
 | Cẳng chân | 92 | Gối → gót, gồm bàn chân; cũng lấy giữa (`84` / `99`). Người ngồi ghế cao bằng gối thì chân chạm sàn |
-| Cánh tay trên | 67 | Vai → khuỷu. Tổng hai đoạn `120`; chia theo người châu Á, cẳng tay ≈ `0,79` cánh tay trên (AIST 2003, người Nhật trẻ: nam `315 : 251`, nữ `292 : 227` mm) |
+| Cánh tay trên | 57 | Tâm khớp vai → khuỷu. Tổng hai đoạn `110`; cánh tay trên ≈ `1,08` cẳng tay, đo từ tâm khớp vai trên người thật. Số đo nhân trắc 上腕長 (AIST 2003: nam `315 : 251`, nữ `292 : 227` mm) tính từ mỏm cùng vai, cao và chìa ngoài tâm khớp, nên không dùng làm độ dài đoạn |
 | Cẳng tay | 53 | Khuỷu → cổ tay |
 | Nửa rộng vai | 40 | `rig.shoulderHalf`, xem ghi chú dưới bảng |
 | Vai tụt | 20 | `rig.shoulderDrop`, khớp vai nằm dưới đỉnh thân bấy nhiêu |
@@ -109,23 +109,23 @@ Vị trí bàn tay trong hệ thân, `sU` và `sL` là hệ số cánh tay trên
 chính tay ấy (dạng bốn số thì `sU = sL = s`):
 
 ```
-x = vai.x + sU·sin(vai)·67 + sL·sin(vai + khuỷu)·53
-y = vai.y + sU·cos(vai)·67 + sL·cos(vai + khuỷu)·53
+x = vai.x + sU·sin(vai)·57 + sL·sin(vai + khuỷu)·53
+y = vai.y + sU·cos(vai)·57 + sL·cos(vai + khuỷu)·53
 ```
 
-Tầm với chuẩn là `67 + 53 = 120`, vai phải ở `(−40, −100)`; bảng tính ở dạng bốn số:
+Tầm với chuẩn là `57 + 53 = 110`, vai phải ở `(−40, −100)`; bảng tính ở dạng bốn số:
 
 | Đích | Cách vai | Cần `stretch` |
 |---|---:|---:|
 | giữa đầu | 101 | 1 |
-| sau gáy | 116 | 1 |
-| đỉnh đầu | 163 | ≥ 1.36 |
-| mũi chân phải | 261 | ≥ 2.17 |
-| chạm đất trước mặt | 279 | ≥ 2.32 |
+| sau gáy | 116 | ≥ 1.05 |
+| đỉnh đầu | 163 | ≥ 1.48 |
+| mũi chân phải | 261 | ≥ 2.37 |
+| chạm đất trước mặt | 279 | ≥ 2.54 |
 
 Cột cuối là mức tối thiểu để **đường thẳng** vai→đích đủ dài. Khối đầu nằm chắn
 giữa: muốn khuỷu vòng ra **ngoài** khối đầu (bán kính `65`, tâm `(0, −193)`) chứ
-không cắt qua nó, tay lên đỉnh đầu cần khoảng `1.6`.
+không cắt qua nó, tay lên đỉnh đầu cần khoảng `1.8`.
 
 Bảng sải chân (`bakeTravel`) và chỗ chạm đất `F.lowest` đo đúng độ dài từng đoạn.
 
@@ -144,7 +144,7 @@ khoảng `1.2`.
 Tay đặt lên đỉnh đầu:
 
 ```json
-{ "pose": { "armRight": [-157, -73, 0], "stretch": [1, 1.65, 1, 1] } }
+{ "pose": { "armRight": [-157, -73, 0], "stretch": [1, 1.8, 1, 1] } }
 ```
 
 Vai âm quét cánh tay lên phía ngoài đầu, khuỷu cùng dấu âm cuộn cẳng tay về đỉnh
@@ -276,7 +276,7 @@ Ràng buộc hình học:
 
 - Chống cằm cần khuỷu lớn hơn `130°`.
 - Ở `stretch = 1` tay với tới vùng từ thái dương tới quai hàm; đỉnh đầu cần
-  `stretch ≥ 1.36` — xem [Vươn chi](#vươn-chi).
+  `stretch ≥ 1.48` — xem [Vươn chi](#vươn-chi).
 - Tay đưa lên đầu dùng góc vai âm. Gãi đầu dùng `[−132, −96]` rồi
   `[−110, −120]`.
 - Pose đứng dùng gối `0`, hông trái `+2°`, hông phải `−2°`; `shock` dùng `±6°`.
@@ -1147,7 +1147,7 @@ chỉ hiện ở mặt. Bật `clad` thì tay chân là ống màu tay áo, ốn
 ([Người 3D mặc đồ](#người-3d-mặc-đồ)). `sleeveWidth`, `trouserWidth` bỏ trống thì `limbWidths` lấy
 theo cờ: `10` khi tắt, tay `15` chân `17` khi bật.
 
-`palette.limbCurve` (`0..1`, mặc định `1`) uốn chi thành nét kiểu rubber hose.
+`palette.limbCurve` (`0..1`, mặc định `0,5`) uốn chi thành nét kiểu rubber hose.
 `0` là hai đoạn thẳng gãy ở khuỷu / gối, cho nhân vật muốn nét gãy góc. Mỗi chi là **hai cubic
 Bézier** qua `[gốc, khớp giữa, ngọn]`, tiếp tuyến ở khớp giữa song song gốc → ngọn (`limbCurves`
 của lõi, `bendLimb` của `stickman.ts`).
@@ -1634,7 +1634,7 @@ của lõi (`core/act3.ts`) trả đúng các khớp ấy trong toạ độ th�
 |---|---:|---|
 | `torso` (hông → khớp cổ) | `1,2` | có |
 | `neck` | `0,08` | có |
-| `upperArm` / `foreArm` | `0,67` / `0,53` | có |
+| `upperArm` / `foreArm` | `0,57` / `0,53` | có |
 | `thigh` / `shin` | `0,78` / `0,92` | có |
 | `head` (bán kính sọ gốc `HEAD3_R`) | `0,384`, sọ bóp `SKULL3` `(1; 1,04; 0,98)` | đầu cầu không; đầu `human` nhân `headK` theo số đầu |
 | `limb` (nửa bề dày nét người que) | `0,042` | không |
@@ -2096,7 +2096,7 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
   cổ tay là tổng có trọng số của từng số hạng đã giải, nên đi liền từ toạ độ thô sang mốc, từ mốc này sang mốc kia, kể cả lúc
   `blendPose` hoà hai clip. `Reach.at` khi ấy là chỗ ước lượng trên người mẫu (`reachEstimate`) cho góc suy từ đích.
 - **Với không tới thì nói ra.** Tay duỗi về phía mốc như đích toạ độ; `scene_probe` trả khe tới mốc ở `world.palms.*.aim`. Ở `stretch` 1 trán, đỉnh đầu, má bên
-  kia của người chibi và đùi lúc đứng thẳng ngoài tầm.
+  kia của người chibi, đùi lúc đứng thẳng, gối và đùi bên kia lúc ngồi thẳng lưng ngoài tầm (ngả thân tới `15°` thì tới).
 - `bodyMarkAt(nhân vật, scenePose, { to, side, offset }, "R" | "L")` trả chỗ của một mốc (thế giới rig) — cùng điểm đích nhắm tới.
 - **Đồ cầm chưa là mốc.** Rig không biết hình của đồ repo video dựng; tay thứ hai đặt lên đồ tay kia đang cầm thì nhắm
   `otherGrip` cộng `offset` theo cỡ đồ.

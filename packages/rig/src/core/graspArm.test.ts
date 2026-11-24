@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { markShape, trunk3, type ActInput } from "./act3";
+import { RIG } from "./constants";
 import { ARM_SOFT, prefPole, softReach } from "./elbow";
 import {
   armInput,
@@ -34,7 +35,12 @@ const LEFT = 1;
 const inR = armInput(T, RIGHT, shape);
 const inL = armInput(T, LEFT, shape);
 // mức nền lấn lớn nhất của tay buông thõng, đo trên rig (`fx.ca.restAllowMax` của prototype đo với tay 62/58)
-const REST_MAX = 4.82;
+const REST_MAX = 3.9;
+/** Cổ tay của prototype (tay 62/58) dời về vai theo tỉ lệ tầm với của rig */
+const scaled = (Wp: V3, S: V3): V3 => {
+  const k = (RIG.upperArm + RIG.foreArm) / 120;
+  return [S[0] + (Wp[0] - S[0]) * k, S[1] + (Wp[1] - S[1]) * k, S[2] + (Wp[2] - S[2]) * k];
+};
 
 const pt = (p: readonly number[]): V3 => [p[0] / 100, -p[1] / 100, -p[2] / 100];
 const dir = (d: readonly number[]): V3 => [d[0], -d[1], -d[2]];
@@ -107,7 +113,8 @@ describe("graspArm", () => {
   it("cổ tay ca c2 của bước 0, khung bàn tay chỉ với tới bằng khuỷu gập ngược — khuỷu giữ dáng tự nhiên, cổ tay chạm giới hạn, `check` báo `wrist`", () => {
     // khung bàn tay của cẳng tay ở khuỷu gập ngược `φ` −100, xoay sấp 60°
     const INV = -100;
-    const { Wp, Rw: R0 } = handOf(fx.ca.c2, RIGHT);
+    const { Wp: W0, Rw: R0 } = handOf(fx.ca.c2, RIGHT);
+    const Wp = scaled(W0, inR.S);
     const Rw = matMul(evalPhi(inR, Wp, R0, INV).fore, wristTurn(-60, 0, 0, RIGHT));
     const inv = evalPhi(inR, Wp, Rw, INV);
     expect(inv.inward).toBeGreaterThan(HELD_ELBOW / 2);

@@ -318,11 +318,11 @@ describe("lần cầm một tay theo mốc", () => {
       },
       { t: 2.8, right: { hold: { ...PHONE, regrip: true, ...back } } },
     ];
-    // mốc 3,3 s gần mặt: giải lại từ đầu thì rig chọn ngón cái mặt khác
+    // mốc 3,3 s gần mặt: giải lại từ đầu thì rig cầm chỗ khác (`along` 0,75)
     const items = [
       phone(0.5, "chest", [40, -6, 6]),
       phone(1.2, "chest", [34, 0, 10]),
-      phone(3.3, "eye", [30, 8, -6]),
+      phone(3.3, "eye", [30, 12, -6]),
     ];
     const rt = runtime(hands(), items);
     const lead = holdLinkFrame(inheritHold(rightHold(rt, 2.8 - 1e-4), NGUOI), -1).G.R;
@@ -332,9 +332,9 @@ describe("lần cầm một tay theo mốc", () => {
       expect(sol.choice.thumb).toBe(first.choice.thumb);
       expect(rotDeg(sol.frame.G.R, lead)).toBeLessThan(3);
     }
-    // mốc xa mặt hơn: lựa chọn cũ lệch cổ tay quá giới hạn ở mốc, rig giữ ngón cái mà trượt trường liên tục
+    // mốc cao hơn: lựa chọn cũ lệch cổ tay quá giới hạn ở mốc, rig giữ ngón cái mà trượt trường liên tục
     // (`KEEP_SLIDE`); món xoay dần trong bàn tay vẽ suốt `HOLD_BLEND`, không giật ở ranh giới
-    const slideItems = [...items.slice(0, 2), phone(3.3, "eye", [30, 16, -12])];
+    const slideItems = [...items.slice(0, 2), phone(3.3, "eye", [30, 8, -6])];
     const slide = runtime(hands(), slideItems);
     const was = inheritHold(rightHold(slide, 2.8 - 1e-4), NGUOI).grasp!.choice;
     const slid = graspAtTime(slide, "nguoi", "right", 3.3, { chars })!;
@@ -439,7 +439,7 @@ describe("lần cầm một tay theo mốc", () => {
       cast: "nguoi",
       item: "dien-thoai",
       to: "hip",
-      offset: [8, -10, 28],
+      offset: [8, -22, 28],
       face: { axis: "screen", toward: [0, 0, -1] },
       roll: { axis: "top", toward: [0, 1, 0] },
     });

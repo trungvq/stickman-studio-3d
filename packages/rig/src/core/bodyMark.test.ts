@@ -65,10 +65,11 @@ const act = (json: object): ActionData => {
   return r.data;
 };
 
-/** Tư thế nền theo dáng thân: đứng, ngồi ghế, cúi chào, ngồi quỳ */
+/** Tư thế nền theo dáng thân: đứng, ngồi ghế, ngồi ngả tới, cúi chào, ngồi quỳ */
 const BASES: Record<string, { pose: Pose; seated: boolean }> = {
   đứng: { pose: POSES.idle, seated: false },
   ngồi: { pose: POSES.sit, seated: true },
+  "ngồi ngả": { pose: { ...POSES.sit, torso: 15 }, seated: true },
   cúi: { pose: { ...POSES.idle, torso: 40 }, seated: false },
   quỳ: { pose: { ...POSES.idle, ll: [-10, -150], lr: [-10, -150], torso: 10 }, seated: true },
 };
@@ -141,8 +142,9 @@ describe("đích theo mốc thân", () => {
       ["hip", "same", "palm", "đứng"],
       ["shoulder", "other", "palm", "đứng"],
       ["thigh", "same", "palm", "ngồi"],
-      ["thigh", "other", "palm", "ngồi"],
-      ["knee", "same", "palm", "ngồi"],
+      // đùi bên kia, gối: ngồi thẳng lưng thì ngoài tầm tay, người thật ngả tới một chút
+      ["thigh", "other", "palm", "ngồi ngả"],
+      ["knee", "same", "palm", "ngồi ngả"],
     ] as const) {
       const a = act({
         mask: ["armRight"],

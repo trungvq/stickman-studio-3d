@@ -164,7 +164,7 @@ describe('món treo: nhớ lời giải theo dáng người', () => {
     expect(fit()).toBe(a);
     expect(posed(w, 0.3)).toBe(fig);
     expect(fit()).toBe(a);
-    posed(w, 0.6);
+    posed(w, 0.9);
     const b = fit();
     expect(b).not.toBe(a);
     expect(bag.getWorldPosition(new THREE.Vector3()).distanceTo(at)).toBeGreaterThan(0.01);

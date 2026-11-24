@@ -89,7 +89,8 @@ describe("solidClashes: người 3D lồng vào đồ khối", () => {
     [150, 80],
     [-150, 80],
   ];
-  const X = -230;
+  // hông cách mép bàn 70: xa hơn thì `handsOn` không với tới chỗ khuỷu cao hơn cổ tay, cẳng tay chúc xuống mép
+  const X = -220;
   const table: SolidItem = {
     name: "ban",
     at: { at: [0, 0, 0] },

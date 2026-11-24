@@ -406,10 +406,11 @@ describe("lớp liên kết tay ↔ món", () => {
           const e = phoneOnEar(c, sp);
           // màn vào đầu, trục máy dọc đường tai – miệng: hướng khai đạt (đo ≤ 0,6° ở −30…40°; quay −40° về phía máy người to
           // chạm giới hạn lệch cổ tay −29,7 / −30, ý định nhường 0,4°, trục lệch 2,1°; cúi 14 quay −40…−10° người to, người
-          // nặng chạm giới hạn cổ tay, ý định nhường ≤ 2,5°, trục lệch ≤ 4°)
-          const edge = nod === 14 && yaw <= -10;
+          // nặng chạm giới hạn cổ tay, ý định nhường ≤ 2,5°, trục lệch ≤ 4°, quay −40° người nặng trục lệch 6,5°; ngửa −20 quay
+          // 40° tai ngoài tầm tay ≤ 0,3, cổ tay chạm giới hạn lệch 20, ý định nhường ≤ 0,4°, trục lệch ≤ 3,4°)
+          const edge = (nod === 14 && yaw <= -10) || (nod === -20 && yaw === 40);
           expect(e.inward, at).toBeLessThan(edge ? 2.5 : 1);
-          expect(e.cheek, at).toBeLessThan(edge ? 4 : yaw >= -30 ? 1 : 3);
+          expect(e.cheek, at).toBeLessThan(edge ? (yaw === -40 ? 7 : 4) : yaw >= -30 ? 1 : 3);
           // loa sát tai (đo ≤ 2,4; dải sát mặt `MARK_NEAR` 16)
           expect(e.speaker, at).toBeLessThan(4);
           const arm = actArm(c, sp, -1)!;

@@ -351,12 +351,12 @@ describe("`both` trên món đặt trước: tay phụ giải như tay dẫn", (
   const CHAI = parse(chaiDia);
   const CHEN = parse(chen);
   // chai, chén đứng hơi nghiêng: cổ tay trong giới hạn (tay kẹp chén, tay nắm thân chai vượt ≤ 2,5° lúc đầu); khay nằm ngang
-  // sát giới hạn xoay cẳng tay
+  // sát giới hạn xoay cẳng tay. Khay, chén thấp hơn ngực `20` thì cổ tay vượt quá `2,5°`
   type Case = [string, HeldItemSpec, string, number[], number[], number[] | undefined];
   const cases: Case[] = [
-    ["khay", KHAY, "platform", [30, 20, 0], [45, 10, 0], undefined],
+    ["khay", KHAY, "platform", [30, 10, 0], [45, 10, 0], undefined],
     ["chai-dia", CHAI, "cylinder", [25, 20, 10], [25, 10, 15], [0.3, 1, 0.3]],
-    ["chen", CHEN, "bowl", [35, 20, 10], [40, 15, 15], [0.2, 1, 0.2]],
+    ["chen", CHEN, "bowl", [35, 10, 10], [40, 10, 15], [0.2, 1, 0.2]],
   ];
   const scene = (c: Case, lead: "right" | "left") => {
     const [item, S, group, o1, o2, up] = c;
