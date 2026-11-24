@@ -46,6 +46,12 @@ export function bendOf([a, b, c]: V3[]): V3 | undefined {
 }
 
 const wrap180 = (a: number) => ((((a + 180) % 360) + 360) % 360) - 180;
+/**
+ * Góc vai về khoảng [−120, 240): vai ngửa ra sau quá ~60° là không có thật, nên đích trên đầu (vượt 180) ghi theo phía giơ
+ * về trước. Hai cách ghi cùng một hướng nhưng đoạn hoà từ dáng buông (~0) đi tuyến tính trên góc: −215 kéo tay vòng ra sau
+ * lưng, 145 giơ lên phía trước.
+ */
+const shoulderRange = (a: number) => ((((a + 120) % 360) + 360) % 360) - 120;
 
 /**
  * Góc tay `[vai, khuỷu, 0]` suy từ đích, cho mốc có đích mà không ghi góc kênh ấy — đoạn hoà sang mốc ghi góc đi
@@ -72,7 +78,7 @@ export function reachAngles(r: Pick<Reach, "at" | "elbow">, torso = 0): Arm {
   const alpha = Math.acos(Math.max(-1, Math.min(1, cosA))) / D;
   // khuỷu về phía hướng khuỷu: phía `+α` là phía đã quay về trước so với trục vai → cổ tay
   const fwd = px * Math.cos(phi * D) - py * Math.sin(phi * D) > 0;
-  const a0 = phi + (fwd ? alpha : -alpha);
+  const a0 = shoulderRange(phi + (fwd ? alpha : -alpha));
   const ex = l1 * Math.sin(a0 * D);
   const ey = l1 * Math.cos(a0 * D);
   const a1 = dist >= l1 + l2 - 1e-9 ? 0 : wrap180(Math.atan2(x - ex, y - ey) / D - a0);

@@ -2034,7 +2034,9 @@ nhau nên bàn tay không lật từ mép này sang mép kia. Xoay `±90` với 
 Mốc có đích mà không ghi góc kênh ấy thì kênh nhận **góc suy từ đích**
 (`reachAngles`): IK trong mặt phẳng dọc với số đo mặc định, bỏ thành phần ngang, đo trong khung thân
 của `torso` tại pha của mốc ấy (mốc không ghi `torso` thì lấy mẫu từ các mốc khác) — tư thế góc của
-`sceneAt` vẫn có tay về phía đích, và đoạn hoà sang mốc ghi góc đi từ chuỗi góc ấy.
+`sceneAt` vẫn có tay về phía đích, và đoạn hoà sang mốc ghi góc đi từ chuỗi góc ấy. Góc vai suy từ đích nằm trong
+[−120, 240): đích trên đầu ghi theo phía giơ về trước (145, không −215), để đoạn hoà từ dáng buông không kéo tay vòng
+ra sau lưng.
 
 ### Đích theo mốc
 
